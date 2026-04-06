@@ -599,6 +599,43 @@ flex-shrink: 0;
 width: 24px;
 }
 
+/* DATE NAVIGATION */
+.date-nav {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.date-nav .hero-card { flex: 1; }
+
+.date-arrow {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 24px;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  box-shadow: var(--shadow);
+}
+
+.date-arrow:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* CLICKABLE TIMELINE ROW */
+.timeline-row.clickable {
+  cursor: pointer;
+}
+
+.timeline-row.clickable:hover {
+  border-color: var(--accent);
+}
+
 /* SMALL BUTTON */
 .btn-small {
   background: none;
@@ -670,13 +707,17 @@ nav { padding: 12px 16px; }
 <div class="page active" id="page-today">
 
   <div class="today-hero">
-    <div class="hero-card">
-      <div class="card-eyebrow" id="today-date-label">Today</div>
-      <div class="card-title" id="today-day-name">Monday</div>
-      <div class="card-sub" id="today-full-date">April 6, 2026</div>
+    <div class="date-nav">
+      <button class="date-arrow" onclick="navigateDay(-1)">&#8249;</button>
+      <div class="hero-card">
+        <div class="card-eyebrow" id="today-date-label">Today</div>
+        <div class="card-title" id="today-day-name">Monday</div>
+        <div class="card-sub" id="today-full-date">April 6, 2026</div>
+      </div>
+      <button class="date-arrow" onclick="navigateDay(1)">&#8250;</button>
     </div>
     <div class="hero-card accent-card">
-      <div class="card-eyebrow">Tonight's Dinner</div>
+      <div class="card-eyebrow" id="dinner-label">Tonight's Dinner</div>
       <div class="dinner-name" id="tonight-dinner">—</div>
       <div class="dinner-meta" id="tonight-meta">—</div>
       <button class="view-recipe-btn" id="tonight-recipe-btn" onclick="openTonightRecipe()">View Recipe</button>
@@ -1024,6 +1065,20 @@ function generateShoppingList() {
 // UI
 // ============================================================
 
+let currentViewDate = new Date();
+
+function navigateDay(delta) {
+  currentViewDate.setDate(currentViewDate.getDate() + delta);
+  renderToday();
+}
+
+function isToday(date) {
+  const now = new Date();
+  return date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+}
+
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -1047,35 +1102,49 @@ function getCurrentMealIndex(schedule) {
   return current;
 }
 
+function findPdfRecipe(name) {
+  const lower = name.toLowerCase();
+  return [...PDF_RECIPES, ...SPECIAL_RECIPES].find(r => r.name.toLowerCase() === lower);
+}
+
 function renderToday() {
-  const now = new Date();
+  const viewDate = currentViewDate;
   const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const viewing = isToday(viewDate);
 
-  document.getElementById('today-day-name').textContent = days[now.getDay()];
+  document.getElementById('today-date-label').textContent = viewing ? 'Today' : days[viewDate.getDay()].substring(0, 3);
+  document.getElementById('today-day-name').textContent = days[viewDate.getDay()];
   document.getElementById('today-full-date').textContent =
-    months[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
+    months[viewDate.getMonth()] + ' ' + viewDate.getDate() + ', ' + viewDate.getFullYear();
 
-  const schedule = getMealSchedule(now);
-  const currentIdx = getCurrentMealIndex(schedule);
+  document.getElementById('dinner-label').textContent = viewing ? "Tonight's Dinner" : 'Dinner';
+
+  const schedule = getMealSchedule(viewDate);
+  const currentIdx = viewing ? getCurrentMealIndex(schedule) : -1;
   const dinner = schedule[4];
   const dinnerMeal = MEALS.find(m => m.id === dinner.mealId);
 
   const dinnerName = dinner.detail || '—';
   document.getElementById('tonight-dinner').innerHTML = dinnerName + (isPdfRecipe(dinnerName) ? ' ' + hfBadge() : '');
   document.getElementById('tonight-meta').textContent = dinner.note || '';
-  if (!dinnerMeal) document.getElementById('tonight-recipe-btn').style.display = 'none';
+
+  const recipeBtn = document.getElementById('tonight-recipe-btn');
+  recipeBtn.style.display = (dinnerMeal || findPdfRecipe(dinnerName)) ? '' : 'none';
 
   const timeline = document.getElementById('meal-timeline');
-  timeline.innerHTML = schedule.map((meal, i) => `
-    <div class="timeline-row ${i === currentIdx ? 'current' : ''} ${meal.closed ? 'closed' : ''}">
+  timeline.innerHTML = schedule.map((meal, i) => {
+    const hasRecipe = meal.mealId || findPdfRecipe(meal.detail);
+    const clickAttr = hasRecipe ? `onclick="openMealFromTimeline('${meal.detail.replace(/'/g,"\\'")}'${meal.mealId ? ', ' + meal.mealId : ''})" ` : '';
+    return `
+    <div class="timeline-row ${i === currentIdx ? 'current' : ''} ${meal.closed ? 'closed' : ''} ${hasRecipe ? 'clickable' : ''}" ${clickAttr}>
       <span class="timeline-time">${meal.time}</span>
       <div class="timeline-dot"></div>
       <span class="timeline-meal">${meal.name}</span>
       <span class="timeline-detail">${meal.detail}${isPdfRecipe(meal.detail) ? ' ' + hfBadge() : ''}</span>
       ${i === currentIdx ? '<span class="now-badge">Now</span>' : ''}
     </div>
-  `).join('');
+  `}).join('');
 }
 
 function renderWeek() {
@@ -1206,11 +1275,24 @@ function openRecipe(id) {
   document.getElementById('modal-overlay').classList.add('open');
 }
 
+function openMealFromTimeline(mealName, mealId) {
+  if (mealId) {
+    openRecipe(mealId);
+  } else {
+    const pdf = findPdfRecipe(mealName);
+    if (pdf) openPdfRecipe(pdf.path, pdf.name);
+  }
+}
+
 function openTonightRecipe() {
-  const now = new Date();
-  const schedule = getMealSchedule(now);
+  const schedule = getMealSchedule(currentViewDate);
   const dinner = schedule[4];
-  if (dinner.mealId) openRecipe(dinner.mealId);
+  if (dinner.mealId) {
+    openRecipe(dinner.mealId);
+  } else {
+    const pdf = findPdfRecipe(dinner.detail);
+    if (pdf) openPdfRecipe(pdf.path, pdf.name);
+  }
 }
 
 function closeModal(event) {
