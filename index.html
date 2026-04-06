@@ -347,6 +347,44 @@ font-size: 11px;
 color: var(–muted);
 }
 
+.meal-card-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: var(--accent);
+  color: white;
+  padding: 3px 7px;
+  border-radius: 2px;
+}
+
+.meal-card-img { position: relative; }
+
+/* PDF EMBED IN MODAL */
+.modal-pdf {
+  width: 100%;
+  height: 70vh;
+  border: none;
+  border-radius: 4px;
+  background: var(--surface2);
+}
+
+/* MEALS PAGE SECTIONS */
+.meals-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--mid);
+  margin-bottom: 16px;
+  margin-top: 32px;
+}
+
+.meals-section-label:first-child { margin-top: 0; }
+
 /* SHOPPING PAGE */
 .shopping-header {
 display: flex;
@@ -597,7 +635,7 @@ nav { padding: 16px 20px; }
 
 <div class="page" id="page-meals">
   <div class="section-label" style="margin-bottom:20px">Recipe Library</div>
-  <div class="meals-grid" id="meals-grid"></div>
+  <div id="meals-container"></div>
 </div>
 
 <!-- SHOPPING PAGE -->
@@ -769,6 +807,63 @@ const MEALS = [
   }
 ];
 
+// PDF Recipes from /recipes/ folder
+const PDF_RECIPES = [
+  { name: 'Apricot Ponzu Chicken', emoji: '🍗', path: 'recipes/Apricot Ponzu Chicken.pdf' },
+  { name: 'BBQ Pineapple Flatbreads', emoji: '🍕', path: 'recipes/BBQ Pineapple Flatbreads.pdf' },
+  { name: 'Beef Flautas Supreme', emoji: '🌯', path: 'recipes/Beef Flautas Supreme.pdf' },
+  { name: 'Brown Sugar Bourbon Chicken', emoji: '🍗', path: 'recipes/Brown Sugar Bourbon Chicken.pdf' },
+  { name: 'Bruschetta Chicken', emoji: '🍗', path: 'recipes/bruschetta-chicken.pdf' },
+  { name: 'Bulgogi Chicken Thigh Tacos', emoji: '🌮', path: 'recipes/bulgogi-chicken-thigh-tacos.pdf' },
+  { name: 'Cheesy Smothered Mushroom Chicken', emoji: '🍄', path: 'recipes/cheesy-smothered-mushroom-chicken.pdf' },
+  { name: 'Chicken Bulgogi Bowl', emoji: '🍚', path: 'recipes/chicken-bulgogi-bowl.pdf' },
+  { name: 'Chicken Over Lemon Parm Spaghetti', emoji: '🍝', path: 'recipes/chicken-over-lemon-parm-spaghetti.pdf' },
+  { name: 'Chicken Parm Salad', emoji: '🥗', path: 'recipes/chicken-parm-salad.pdf' },
+  { name: 'Chicken Pineapple Quesadillas', emoji: '🧀', path: 'recipes/chicken-pineapple-quesadillas.pdf' },
+  { name: 'Chicken Sausage Flatbreads', emoji: '🍕', path: 'recipes/chicken-sausage-flatbreads.pdf' },
+  { name: 'Chicken Teriyaki Stir-Fry', emoji: '🥢', path: 'recipes/chicken-teriyaki-stir-fry.pdf' },
+  { name: 'Creamy Rigatoni With Pork Sausage', emoji: '🍝', path: 'recipes/Creamy Rigatoni With Pork Sausage.pdf' },
+  { name: 'Creamy Tuscan Spaghetti & Meatballs', emoji: '🍝', path: 'recipes/Creamy Tuscan Spaghetti & Meatballs.pdf' },
+  { name: 'Crispy Cheddar Chicken', emoji: '🧀', path: 'recipes/crispy-cheddar-chicken.pdf' },
+  { name: 'Crispy Maple Mustard Chicken', emoji: '🍁', path: 'recipes/crispy-maple-mustard-chicken.pdf' },
+  { name: 'Dijon Onion Crunch Salmon', emoji: '🐟', path: 'recipes/Dijon Onion Crunch Salmon.pdf' },
+  { name: 'Firecracker Meatballs', emoji: '🔥', path: 'recipes/firecracker-meatballs.pdf' },
+  { name: 'Garlic Butter Shrimp Scampi', emoji: '🦐', path: 'recipes/Garlic Butter Shrimp Scampi.pdf' },
+  { name: 'Ginger Beef Stir-Fry', emoji: '🥩', path: 'recipes/ginger-beef-stir-fry.pdf' },
+  { name: 'Hoisin Glazed Meatballs', emoji: '🍖', path: 'recipes/hoisin-glazed-meatballs.pdf' },
+  { name: 'Homestyle Chicken & Biscuit Pot Pie', emoji: '🥧', path: 'recipes/Homestyle Chicken & Biscuit Pot Pie.pdf' },
+  { name: 'Lemon Chive Chicken', emoji: '🍋', path: 'recipes/lemon-chive-chicken.pdf' },
+  { name: 'Loaded Baked Potato Soup', emoji: '🥔', path: 'recipes/Loaded Baked Potato Soup.pdf' },
+  { name: 'Onion Crunch Chicken', emoji: '🍗', path: 'recipes/Onion Crunch Chicken.pdf' },
+  { name: 'Pan-Seared Chicken with Herbs De Provence', emoji: '🌿', path: 'recipes/Pan-Seared Chicken with Herbs De Provence.pdf' },
+  { name: 'Paprika Chicken in a Lemony Sauce', emoji: '🍗', path: 'recipes/Paprika Chicken in a Lemony Sauce.pdf' },
+  { name: 'Penne with Pork Meatballs', emoji: '🍝', path: 'recipes/Penne with Pork Meatballs.pdf' },
+  { name: 'Pineapple Salsa Pork Tacos', emoji: '🌮', path: 'recipes/pineapple-salsa-pork-tacos.pdf' },
+  { name: 'Presto Pesto Panko Chicken', emoji: '🍗', path: 'recipes/presto-pesto-panko-chicken.pdf' },
+  { name: 'Pub-Style Shepherd\'s Pie', emoji: '🥧', path: 'recipes/Pub-Style Shepherd\'s Pie.pdf' },
+  { name: 'Pulled Pork Fiesta Bowls', emoji: '🍖', path: 'recipes/pulled-pork-fiesta-bowls.pdf' },
+  { name: 'Sausage and Spring Pea Risotto', emoji: '🍚', path: 'recipes/sausage-and-spring-pea-risotto.pdf' },
+  { name: 'Smoky Brown Sugar Chicken Salad', emoji: '🥗', path: 'recipes/Smoky Brown Sugar Chicken Salad.pdf' },
+  { name: 'Southwest Chicken Sausage & Rice Skillet', emoji: '🍳', path: 'recipes/southwest-chicken-sausage-and-rice-skillet.pdf' },
+  { name: 'Spinach Ricotta Ravioli', emoji: '🥟', path: 'recipes/spinach-ricotta-ravioli.pdf' },
+  { name: 'Strip Steak Over Truffled Mashed Potatoes', emoji: '🥩', path: 'recipes/strip-steak-over-truffled-mashed-potatoes.pdf' },
+  { name: 'Sweet As Honey Chicken', emoji: '🍯', path: 'recipes/sweet-as-honey-chicken.pdf' },
+  { name: 'Sweet Chili Turkey & Green Bean Bowls', emoji: '🌶️', path: 'recipes/Sweet Chili Turkey & Green Bean Bowls.pdf' },
+  { name: 'Sweet N Smoky Pork Tenderloin', emoji: '🍖', path: 'recipes/sweet-n-smoky-pork-tenderloin.pdf' },
+  { name: 'Teriyaki Chicken Tenders', emoji: '🍗', path: 'recipes/teriyaki-chicken-tenders.pdf' },
+  { name: 'Thai Coconut Pork Meatballs', emoji: '🥥', path: 'recipes/Thai Coconut Pork Meatballs.pdf' },
+  { name: 'Beef Tenderloin in a Mustard Sauce', emoji: '🥩', path: 'recipes/beef-tenderloin-in-a-mustard-sauce.pdf' },
+  { name: 'Winner Winner Chicken Orzo Dinner', emoji: '🍗', path: 'recipes/winner-winner-chicken-orzo-dinner.pdf' },
+];
+
+// Special Dinner PDF Recipes
+const SPECIAL_RECIPES = [
+  { name: 'Creamy Shrimp Bacon Spaghetti', emoji: '🦐', path: 'recipes/Special Dinners/creamy-shrimp-bacon-spaghetti.pdf' },
+  { name: 'Lobster Filled Ravioli with Shrimp', emoji: '🦞', path: 'recipes/Special Dinners/lobster-filled-ravioli-shrimp.pdf' },
+  { name: 'Prosciutto Wrapped Chicken', emoji: '🍗', path: 'recipes/Special Dinners/prosciutto-wrapped-chicken.pdf' },
+  { name: 'Sirloin and Sherry Shallot Sauce', emoji: '🥩', path: 'recipes/Special Dinners/sirloin-and-sherry-shallot-sauce.pdf' },
+];
+
 // Daily meal schedule
 function getMealSchedule(date) {
   const day = date.getDay();
@@ -938,17 +1033,37 @@ function renderWeek() {
   }
 }
 
-function renderMeals() {
-  const grid = document.getElementById('meals-grid');
-  grid.innerHTML = MEALS.map(meal => `
-    <div class="meal-card" onclick="openRecipe(${meal.id})">
-      <div class="meal-card-img">${meal.emoji}</div>
+function renderPdfCards(recipes) {
+  return recipes.map(r => `
+    <div class="meal-card" onclick="openPdfRecipe('${r.path.replace(/'/g,"\\'")}', '${r.name.replace(/'/g,"\\'")}')">
+      <div class="meal-card-img">${r.emoji}<span class="meal-card-badge">PDF</span></div>
       <div class="meal-card-body">
-        <div class="meal-card-title">${meal.name}</div>
-        <div class="meal-card-meta">${meal.cookTime} · ${meal.type === 'kids' ? 'Family' : meal.type === 'both' ? 'Family' : 'Solo'}</div>
+        <div class="meal-card-title">${r.name}</div>
+        <div class="meal-card-meta">PDF Recipe</div>
       </div>
     </div>
   `).join('');
+}
+
+function renderMeals() {
+  const container = document.getElementById('meals-container');
+  container.innerHTML =
+    '<div class="meals-section-label">Weekly Rotation</div>' +
+    '<div class="meals-grid">' +
+    MEALS.map(meal => `
+      <div class="meal-card" onclick="openRecipe(${meal.id})">
+        <div class="meal-card-img">${meal.emoji}</div>
+        <div class="meal-card-body">
+          <div class="meal-card-title">${meal.name}</div>
+          <div class="meal-card-meta">${meal.cookTime} · ${meal.type === 'kids' ? 'Family' : meal.type === 'both' ? 'Family' : 'Solo'}</div>
+        </div>
+      </div>
+    `).join('') +
+    '</div>' +
+    '<div class="meals-section-label">Recipes</div>' +
+    '<div class="meals-grid">' + renderPdfCards(PDF_RECIPES) + '</div>' +
+    '<div class="meals-section-label">Special Dinners</div>' +
+    '<div class="meals-grid">' + renderPdfCards(SPECIAL_RECIPES) + '</div>';
 }
 
 function renderShopping() {
@@ -979,6 +1094,13 @@ function toggleCheck(el, item) {
 function clearChecked() {
   localStorage.removeItem('checked');
   renderShopping();
+}
+
+function openPdfRecipe(path, name) {
+  document.getElementById('modal-title').textContent = name;
+  document.getElementById('modal-body').innerHTML =
+    '<iframe class="modal-pdf" src="' + encodeURI(path) + '"></iframe>';
+  document.getElementById('modal-overlay').classList.add('open');
 }
 
 function openRecipe(id) {
