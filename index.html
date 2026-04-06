@@ -7,10 +7,9 @@
 <title>The Table</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module"></script>
-<script type="module">
-  import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs';
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   window.pdfjsLib = pdfjsLib;
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -205,12 +204,13 @@ background: #f0f9eb;
 border-color: var(--accent);
 }
 
-.timeline-row.closed {
+.timeline-row.current.closed {
 background: #fef2f2;
 border-color: #fecaca;
 }
-.timeline-row.closed .timeline-time { color: #dc2626; }
-.timeline-row.closed .timeline-meal { color: #991b1b; }
+.timeline-row.current.closed .timeline-time { color: #dc2626; }
+.timeline-row.current.closed .timeline-meal { color: #991b1b; }
+.timeline-row.current.closed .timeline-detail { color: #991b1b; }
 
 .timeline-time {
 font-size: 11px;
@@ -819,6 +819,32 @@ width: 24px;
 
 .btn-delete:hover { background: var(--danger); color: white; }
 
+.meal-type-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-left: 12px;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.toggle-btn:last-child { border-right: none; }
+.toggle-btn.active { background: var(--accent); color: white; }
+
 /* FILTER BAR */
 .filter-bar {
   display: flex;
@@ -1005,11 +1031,13 @@ async function loadRatings() {
   if (data) data.forEach(r => ratingsCache[r.recipe_id] = r);
 }
 
-async function saveRating(recipeId, stars, isFavorite = false, isDeleted = false) {
-  ratingsCache[recipeId] = { recipe_id: recipeId, stars, is_favorite: isFavorite, is_deleted: isDeleted };
-  await sb.from('ratings').upsert({
-    recipe_id: recipeId, stars, is_favorite: isFavorite, is_deleted: isDeleted, updated_at: new Date().toISOString()
-  });
+async function saveRating(recipeId, stars, isFavorite = false, isDeleted = false, mealType = null) {
+  const entry = { recipe_id: recipeId, stars, is_favorite: isFavorite, is_deleted: isDeleted };
+  if (mealType) entry.meal_type = mealType;
+  ratingsCache[recipeId] = entry;
+  const row = { recipe_id: recipeId, stars, is_favorite: isFavorite, is_deleted: isDeleted, updated_at: new Date().toISOString() };
+  if (mealType) row.meal_type = mealType;
+  await sb.from('ratings').upsert(row);
 }
 
 // ============================================================
@@ -1139,7 +1167,7 @@ const MEALS = [
     id: 6,
     name: 'Sunday Crockpot',
     emoji: '🍲',
-    type: 'both',
+    type: 'kids',
     cookTime: 'Start night before',
     ingredients: [
       { amount: '2-3 lbs', item: 'chicken thighs or chuck roast' },
@@ -1261,7 +1289,7 @@ const RECIPE_REGISTRY = [
     source: 'pdf',
     path: r.path,
     protein: guessProtein(r.name),
-    mealType: 'both',
+    mealType: 'kids',
     cookTime: null,
     emoji: r.emoji
   })),
@@ -1271,7 +1299,7 @@ const RECIPE_REGISTRY = [
     source: 'pdf',
     path: r.path,
     protein: guessProtein(r.name),
-    mealType: 'both',
+    mealType: 'kids',
     cookTime: null,
     emoji: r.emoji,
     category: 'special'
@@ -1296,8 +1324,9 @@ function getDinnerForDate(date) {
   const status = getKidStatus(date);
   const pool = RECIPE_REGISTRY.filter(r => {
     if (ratingsCache[r.id]?.is_deleted) return false;
-    if (status === 'kids') return r.mealType === 'kids' || r.mealType === 'both';
-    return r.mealType === 'solo' || r.mealType === 'both';
+    const effectiveType = ratingsCache[r.id]?.meal_type || r.mealType;
+    if (status === 'kids') return effectiveType === 'kids' || effectiveType === 'both';
+    return effectiveType === 'solo' || effectiveType === 'both';
   });
   if (pool.length === 0) return null;
 
@@ -1310,8 +1339,9 @@ function getDinnerForDate(date) {
     const prevPool = RECIPE_REGISTRY.filter(r => {
       if (ratingsCache[r.id]?.is_deleted) return false;
       const prevStatus = getKidStatus(prev);
-      if (prevStatus === 'kids') return r.mealType === 'kids' || r.mealType === 'both';
-      return r.mealType === 'solo' || r.mealType === 'both';
+      const et = ratingsCache[r.id]?.meal_type || r.mealType;
+      if (prevStatus === 'kids') return et === 'kids' || et === 'both';
+      return et === 'solo' || et === 'both';
     });
     if (prevPool.length > 0) {
       const prevIdx = Math.floor(prevRng() * prevPool.length);
@@ -1424,7 +1454,7 @@ function generateShoppingList() {
       }
     } else {
       const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      hfMeals.push(dayNames[date.getDay()] + ': ' + recipe.name);
+      hfMeals.push({ day: dayNames[date.getDay()], name: recipe.name, path: recipe.path });
     }
   }
 
@@ -1437,7 +1467,7 @@ function generateShoppingList() {
   }
 
   if (hfMeals.length > 0) {
-    categories['HelloFresh Meals (check cards)'] = hfMeals;
+    categories._hfMeals = hfMeals;
   }
 
   return categories;
@@ -1598,8 +1628,12 @@ function renderPdfCards(recipes) {
   `).join('');
 }
 
+let _thumbRetries = 0;
 function initThumbnails() {
-  if (!window.pdfjsLib) { setTimeout(initThumbnails, 500); return; }
+  if (!window.pdfjsLib) {
+    if (_thumbRetries++ < 20) { setTimeout(initThumbnails, 500); }
+    return;
+  }
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(async (entry) => {
       if (!entry.isIntersecting) return;
@@ -1648,6 +1682,87 @@ function initThumbnails() {
 }
 
 // ============================================================
+// PDF METADATA EXTRACTION
+// ============================================================
+
+async function extractPdfMeta(path) {
+  if (!window.pdfjsLib) return null;
+  const cacheKey = 'meta:' + path;
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) return JSON.parse(cached);
+  try {
+    const pdf = await window.pdfjsLib.getDocument(encodeURI(path)).promise;
+    const page = await pdf.getPage(1);
+    const textContent = await page.getTextContent();
+    const text = textContent.items.map(item => item.str).join(' ');
+    const prepMatch = text.match(/PREP\s*[:\s]*(\d+)\s*MIN/i);
+    const totalMatch = text.match(/TOTAL\s*[:\s]*(\d+)\s*MIN/i);
+    const cookMatch = text.match(/COOK\s*[:\s]*(\d+)\s*MIN/i);
+    const caloriesMatch = text.match(/CALORIES\s*[:\s]*(\d+)/i);
+    const meta = {
+      prepTime: prepMatch ? parseInt(prepMatch[1]) : null,
+      totalTime: totalMatch ? parseInt(totalMatch[1]) : null,
+      cookTime: cookMatch ? parseInt(cookMatch[1]) : null,
+      calories: caloriesMatch ? parseInt(caloriesMatch[1]) : null
+    };
+    try { sessionStorage.setItem(cacheKey, JSON.stringify(meta)); } catch(e) {}
+    return meta;
+  } catch(e) { return null; }
+}
+
+async function loadPdfMetaForCards() {
+  if (!window.pdfjsLib) return;
+  const cards = document.querySelectorAll('.meal-card-thumb[data-pdf-path]');
+  for (const card of cards) {
+    const path = card.dataset.pdfPath;
+    if (!path) continue;
+    const meta = await extractPdfMeta(path);
+    if (meta && meta.totalTime) {
+      const metaEl = card.closest('.meal-card')?.querySelector('.meal-card-meta');
+      if (metaEl && !metaEl.dataset.metaLoaded) {
+        metaEl.dataset.metaLoaded = 'true';
+        const existing = metaEl.textContent.trim();
+        metaEl.innerHTML = meta.totalTime + ' min' + (existing ? ' · ' + existing : '');
+      }
+      // Update registry cook time for filtering
+      const reg = RECIPE_REGISTRY.find(r => r.path === path);
+      if (reg && !reg.cookTime) reg.cookTime = meta.totalTime + ' min';
+      if (reg) reg._totalMinutes = meta.totalTime;
+    }
+  }
+}
+
+// ============================================================
+// PDF INGREDIENT EXTRACTION
+// ============================================================
+
+async function extractPdfIngredients(path) {
+  if (!window.pdfjsLib) return [];
+  const cacheKey = 'ing:' + path;
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) return JSON.parse(cached);
+  try {
+    const pdf = await window.pdfjsLib.getDocument(encodeURI(path)).promise;
+    const page = await pdf.getPage(1);
+    const textContent = await page.getTextContent();
+    const items = textContent.items;
+    const ingredients = [];
+    for (let i = 0; i < items.length; i++) {
+      const str = items[i].str.trim();
+      if (!str || str.length > 40 || str.length < 2) continue;
+      if (/^[A-Z][a-z]/.test(str) && !str.includes('PREP') && !str.includes('COOK') &&
+          !str.includes('TOTAL') && !str.includes('CALORIES') && !str.includes('HelloFresh') &&
+          !str.includes('HELLO') && items[i].height && items[i].height < 12) {
+        ingredients.push(str);
+      }
+    }
+    const result = ingredients.slice(0, 12);
+    try { sessionStorage.setItem(cacheKey, JSON.stringify(result)); } catch(e) {}
+    return result;
+  } catch(e) { return []; }
+}
+
+// ============================================================
 // STAR RATING
 // ============================================================
 
@@ -1662,6 +1777,7 @@ function renderStarRating(recipeId) {
   return `
     <div class="rating-section">
       <div class="star-rating">${[1,2,3,4,5].map(i => starSvg(i)).join('')}</div>
+      ${renderMealTypeToggle(recipeId)}
       <button class="btn-favorite ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('${recipeId}')">${isFav ? '★ Favorite' : '☆ Favorite'}</button>
       <button class="btn-delete" onclick="event.stopPropagation(); toggleDeleted('${recipeId}')">${isDel ? 'Restore' : 'Remove'}</button>
     </div>
@@ -1703,12 +1819,32 @@ function refreshRatingUI(recipeId) {
   if (el) el.innerHTML = renderStarRating(recipeId);
 }
 
+function renderMealTypeToggle(recipeId) {
+  const reg = RECIPE_REGISTRY.find(r => r.id === recipeId);
+  const currentType = ratingsCache[recipeId]?.meal_type || (reg ? reg.mealType : 'kids');
+  return `<div class="meal-type-toggle">
+    <button class="toggle-btn ${currentType === 'solo' ? 'active' : ''}" onclick="event.stopPropagation(); setMealType('${recipeId}', 'solo')">Solo</button>
+    <button class="toggle-btn ${currentType === 'kids' ? 'active' : ''}" onclick="event.stopPropagation(); setMealType('${recipeId}', 'kids')">Family</button>
+  </div>`;
+}
+
+function setMealType(recipeId, type) {
+  const current = ratingsCache[recipeId] || {};
+  saveRating(recipeId, current.stars || 0, current.is_favorite || false, current.is_deleted || false, type);
+  const reg = RECIPE_REGISTRY.find(r => r.id === recipeId);
+  if (reg) {
+    if (reg.source === 'inline') openRecipe(reg.mealId);
+    else openPdfRecipe(reg.path, reg.name);
+  }
+}
+
 // ============================================================
 // FILTER STATE
 // ============================================================
 
 let activeProteinFilter = 'all';
 let activeRatingFilter = 0;
+let activeTimeFilter = 0;
 let showFavoritesOnly = false;
 
 function setProteinFilter(protein) {
@@ -1728,6 +1864,11 @@ function setRatingFilter(minStars) {
   renderMeals();
 }
 
+function setTimeFilter(maxMin) {
+  activeTimeFilter = parseInt(maxMin) || 0;
+  renderMeals();
+}
+
 function renderMeals() {
   // Filter bar
   const proteins = ['all', 'chicken', 'beef', 'pork', 'turkey', 'seafood'];
@@ -1743,6 +1884,12 @@ function renderMeals() {
       <option value="3" ${activeRatingFilter === 3 ? 'selected' : ''}>★★★+ (3+)</option>
       <option value="4" ${activeRatingFilter === 4 ? 'selected' : ''}>★★★★+ (4+)</option>
       <option value="5" ${activeRatingFilter === 5 ? 'selected' : ''}>★★★★★ (5)</option>
+    </select>` +
+    `<select class="filter-select" onchange="setTimeFilter(this.value)">
+      <option value="0" ${activeTimeFilter === 0 ? 'selected' : ''}>Any Time</option>
+      <option value="30" ${activeTimeFilter === 30 ? 'selected' : ''}>Under 30 min</option>
+      <option value="45" ${activeTimeFilter === 45 ? 'selected' : ''}>Under 45 min</option>
+      <option value="60" ${activeTimeFilter === 60 ? 'selected' : ''}>Under 60 min</option>
     </select>`;
 
   // Filter recipes
@@ -1756,6 +1903,11 @@ function renderMeals() {
     if (showFavoritesOnly && !rating.is_favorite) return false;
     // Rating filter
     if (activeRatingFilter > 0 && (rating.stars || 0) < activeRatingFilter) return false;
+    // Time filter
+    if (activeTimeFilter > 0) {
+      const mins = r._totalMinutes || (r.cookTime ? parseInt(r.cookTime) : null);
+      if (!mins || mins >= activeTimeFilter) return false;
+    }
     return true;
   });
 
@@ -1767,7 +1919,7 @@ function renderMeals() {
       : `openPdfRecipe('${r.path.replace(/'/g,"\\'")}', '${r.name.replace(/'/g,"\\'")}')`;
     const thumbContent = r.source === 'pdf'
       ? `<div class="meal-card-thumb" data-pdf-path="${r.path}"></div>`
-      : `<div class="meal-card-thumb" style="background:var(--accent-light);font-size:48px;display:flex;align-items:center;justify-content:center">${r.emoji}</div>`;
+      : `<div class="meal-card-thumb" style="background:var(--accent-light)"></div>`;
     const metaParts = [];
     if (r.cookTime) metaParts.push(r.cookTime);
     const miniStars = renderMiniStars(r.id);
@@ -1806,8 +1958,11 @@ async function renderShopping() {
   const checkedItems = {};
   if (data) data.forEach(d => checkedItems[d.item] = true);
 
+  const hfMeals = list._hfMeals || [];
+  const regularCats = Object.entries(list).filter(([k]) => k !== '_hfMeals');
+
   const container = document.getElementById('shopping-list');
-  container.innerHTML = Object.entries(list).map(([cat, items]) => `
+  let html = regularCats.map(([cat, items]) => `
     <div class="shopping-cat">
       <div class="shopping-cat-title">${cat}</div>
       ${items.map(item => `
@@ -1818,6 +1973,49 @@ async function renderShopping() {
       `).join('')}
     </div>
   `).join('');
+
+  if (hfMeals.length > 0) {
+    html += `<div class="shopping-cat">
+      <div class="shopping-cat-title">HelloFresh Meals</div>
+      ${hfMeals.map(m => `
+        <div style="margin-bottom:12px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:4px">${m.name} (${m.day})</div>
+          <div class="hf-ingredients" data-ing-path="${m.path}">
+            <div style="font-size:12px;color:var(--muted);padding:4px 0">Loading ingredients...</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  container.innerHTML = html;
+
+  // Lazy load HF ingredients
+  if (window.pdfjsLib && hfMeals.length > 0) {
+    loadHfIngredients(checkedItems);
+  } else if (hfMeals.length > 0) {
+    setTimeout(() => loadHfIngredients(checkedItems), 2000);
+  }
+}
+
+async function loadHfIngredients(checkedItems) {
+  if (!window.pdfjsLib) return;
+  const els = document.querySelectorAll('.hf-ingredients[data-ing-path]');
+  for (const el of els) {
+    const path = el.dataset.ingPath;
+    const ingredients = await extractPdfIngredients(path);
+    if (ingredients.length > 0) {
+      el.innerHTML = ingredients.map(ing => {
+        const itemKey = ing;
+        return `<div class="shopping-item ${checkedItems[itemKey] ? 'checked' : ''}" onclick="toggleCheck(this, '${itemKey.replace(/'/g,"\\'")}')">
+          <div class="shop-check"></div>
+          <span class="shop-text">${ing}</span>
+        </div>`;
+      }).join('');
+    } else {
+      el.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:4px 0">Check recipe card for ingredients</div>';
+    }
+  }
 }
 
 async function toggleCheck(el, item) {
@@ -1961,6 +2159,7 @@ function closeModal(event) {
   renderMeals();
   try { await renderShopping(); } catch(e) { console.warn('Shopping load failed:', e); renderShoppingFallback(); }
   setTimeout(initThumbnails, 1000);
+  setTimeout(loadPdfMetaForCards, 3000);
 
   try {
     sb.channel('shopping-changes')
@@ -1974,8 +2173,10 @@ function closeModal(event) {
 function renderShoppingFallback() {
   const list = generateShoppingList();
   const saved = JSON.parse(localStorage.getItem('checked') || '{}');
+  const hfMeals = list._hfMeals || [];
+  const regularCats = Object.entries(list).filter(([k]) => k !== '_hfMeals');
   const container = document.getElementById('shopping-list');
-  container.innerHTML = Object.entries(list).map(([cat, items]) => `
+  let html = regularCats.map(([cat, items]) => `
     <div class="shopping-cat">
       <div class="shopping-cat-title">${cat}</div>
       ${items.map(item => `
@@ -1986,6 +2187,15 @@ function renderShoppingFallback() {
       `).join('')}
     </div>
   `).join('');
+  if (hfMeals.length > 0) {
+    html += `<div class="shopping-cat">
+      <div class="shopping-cat-title">HelloFresh Meals</div>
+      ${hfMeals.map(m => `
+        <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:8px">${m.name} (${m.day})</div>
+      `).join('')}
+    </div>`;
+  }
+  container.innerHTML = html;
 }
 
 </script>
