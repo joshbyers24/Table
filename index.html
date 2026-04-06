@@ -1,12 +1,1036 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0d0d0d;
+    --white: #f8f6f1;
+    --accent: #c4622d;
+    --accent2: #e8a87c;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --mid: #555;
+    --text: #e8e4dc;
+    --muted: #888;
+  }
+
+- { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+height: 100%;
+background: var(–black);
+color: var(–text);
+font-family: ‘DM Sans’, sans-serif;
+}
+
+/* NAV */
+nav {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 20px 32px;
+border-bottom: 1px solid var(–border);
+position: sticky;
+top: 0;
+background: var(–black);
+z-index: 100;
+}
+
+.nav-logo {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 28px;
+letter-spacing: 3px;
+color: var(–white);
+}
+
+.nav-logo span { color: var(–accent); }
+
+.nav-tabs {
+display: flex;
+gap: 4px;
+}
+
+.nav-tab {
+background: none;
+border: none;
+color: var(–muted);
+font-family: ‘DM Sans’, sans-serif;
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 2px;
+text-transform: uppercase;
+padding: 8px 16px;
+border-radius: 3px;
+cursor: pointer;
+transition: all 0.15s;
+}
+
+.nav-tab:hover { color: var(–text); }
+.nav-tab.active {
+background: var(–surface2);
+color: var(–accent);
+}
+
+/* PAGES */
+.page { display: none; padding: 32px; max-width: 1100px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* TODAY PAGE */
+.today-hero {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 20px;
+margin-bottom: 28px;
+}
+
+.hero-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 6px;
+padding: 28px;
+}
+
+.hero-card.accent-card {
+background: linear-gradient(135deg, #1a0a04 0%, #2a1208 100%);
+border-color: #3a1a0a;
+}
+
+.card-eyebrow {
+font-size: 10px;
+font-weight: 600;
+letter-spacing: 3px;
+text-transform: uppercase;
+color: var(–accent);
+margin-bottom: 8px;
+}
+
+.card-title {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 48px;
+letter-spacing: 2px;
+color: var(–white);
+line-height: 1;
+margin-bottom: 4px;
+}
+
+.card-sub {
+font-size: 14px;
+font-weight: 300;
+color: var(–muted);
+}
+
+.dinner-name {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 36px;
+letter-spacing: 1px;
+color: var(–white);
+line-height: 1.1;
+margin-bottom: 8px;
+}
+
+.dinner-meta {
+font-size: 12px;
+color: var(–muted);
+font-weight: 400;
+}
+
+.view-recipe-btn {
+margin-top: 16px;
+display: inline-block;
+background: var(–accent);
+color: white;
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 2px;
+text-transform: uppercase;
+padding: 10px 20px;
+border-radius: 3px;
+border: none;
+cursor: pointer;
+transition: opacity 0.15s;
+text-decoration: none;
+}
+
+.view-recipe-btn:hover { opacity: 0.85; }
+
+/* MEAL TIMELINE */
+.section-label {
+font-size: 10px;
+font-weight: 600;
+letter-spacing: 3px;
+text-transform: uppercase;
+color: var(–mid);
+margin-bottom: 16px;
+}
+
+.timeline {
+display: flex;
+flex-direction: column;
+gap: 2px;
+margin-bottom: 32px;
+}
+
+.timeline-row {
+display: flex;
+align-items: center;
+gap: 16px;
+padding: 14px 20px;
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 4px;
+transition: border-color 0.15s;
+}
+
+.timeline-row.current {
+border-color: var(–accent);
+background: #1a0d06;
+}
+
+.timeline-time {
+font-size: 11px;
+font-weight: 600;
+letter-spacing: 1px;
+color: var(–muted);
+min-width: 60px;
+}
+
+.timeline-row.current .timeline-time {
+color: var(–accent);
+}
+
+.timeline-dot {
+width: 6px;
+height: 6px;
+border-radius: 50%;
+background: var(–border);
+flex-shrink: 0;
+}
+
+.timeline-row.current .timeline-dot {
+background: var(–accent);
+}
+
+.timeline-meal {
+font-size: 14px;
+font-weight: 400;
+color: var(–text);
+flex: 1;
+}
+
+.timeline-detail {
+font-size: 12px;
+color: var(–muted);
+font-weight: 300;
+}
+
+.now-badge {
+font-size: 9px;
+font-weight: 700;
+letter-spacing: 2px;
+text-transform: uppercase;
+background: var(–accent);
+color: white;
+padding: 3px 8px;
+border-radius: 2px;
+}
+
+/* WEEK PAGE */
+.week-grid {
+display: grid;
+grid-template-columns: repeat(7, 1fr);
+gap: 8px;
+margin-bottom: 32px;
+}
+
+.week-day {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 6px;
+padding: 16px 12px;
+min-height: 140px;
+}
+
+.week-day.today {
+border-color: var(–accent);
+}
+
+.week-day-name {
+font-size: 9px;
+font-weight: 700;
+letter-spacing: 2px;
+text-transform: uppercase;
+color: var(–muted);
+margin-bottom: 4px;
+}
+
+.week-day-num {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 32px;
+color: var(–mid);
+line-height: 1;
+margin-bottom: 10px;
+}
+
+.week-day.today .week-day-num { color: var(–accent); }
+
+.week-meal-tag {
+font-size: 10px;
+font-weight: 500;
+color: var(–text);
+line-height: 1.5;
+margin-bottom: 4px;
+}
+
+.week-who {
+font-size: 9px;
+font-weight: 600;
+letter-spacing: 1px;
+text-transform: uppercase;
+padding: 2px 6px;
+border-radius: 2px;
+display: inline-block;
+margin-top: 6px;
+}
+
+.solo-tag { background: #1a3a2a; color: #6dbf8f; }
+.kids-tag { background: #1a2a3a; color: #6a9fd8; }
+
+/* MEALS PAGE */
+.meals-grid {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 16px;
+}
+
+.meal-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 6px;
+overflow: hidden;
+cursor: pointer;
+transition: border-color 0.15s, transform 0.15s;
+}
+
+.meal-card:hover {
+border-color: var(–accent);
+transform: translateY(-2px);
+}
+
+.meal-card-img {
+width: 100%;
+height: 140px;
+background: var(–surface2);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 40px;
+}
+
+.meal-card-body { padding: 16px; }
+
+.meal-card-title {
+font-size: 15px;
+font-weight: 500;
+color: var(–white);
+margin-bottom: 4px;
+}
+
+.meal-card-meta {
+font-size: 11px;
+color: var(–muted);
+}
+
+/* SHOPPING PAGE */
+.shopping-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 20px;
+}
+
+.shopping-week-label {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 28px;
+letter-spacing: 1px;
+color: var(–white);
+}
+
+.shopping-categories {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 16px;
+}
+
+.shopping-cat {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 6px;
+padding: 20px;
+}
+
+.shopping-cat-title {
+font-size: 10px;
+font-weight: 700;
+letter-spacing: 3px;
+text-transform: uppercase;
+color: var(–accent);
+margin-bottom: 12px;
+}
+
+.shopping-item {
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 8px 0;
+border-bottom: 1px solid var(–border);
+cursor: pointer;
+}
+
+.shopping-item:last-child { border-bottom: none; }
+
+.shop-check {
+width: 18px;
+height: 18px;
+border: 2px solid var(–border);
+border-radius: 3px;
+flex-shrink: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: all 0.15s;
+}
+
+.shopping-item.checked .shop-check {
+background: var(–accent);
+border-color: var(–accent);
+}
+
+.shopping-item.checked .shop-check::after {
+content: ‘✓’;
+color: white;
+font-size: 11px;
+font-weight: 700;
+}
+
+.shop-text {
+font-size: 13px;
+color: var(–text);
+transition: color 0.15s;
+}
+
+.shopping-item.checked .shop-text {
+color: var(–mid);
+text-decoration: line-through;
+}
+
+/* RECIPE MODAL */
+.modal-overlay {
+display: none;
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,0.85);
+z-index: 200;
+align-items: center;
+justify-content: center;
+padding: 32px;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 8px;
+max-width: 680px;
+width: 100%;
+max-height: 85vh;
+overflow-y: auto;
+padding: 36px;
+position: relative;
+}
+
+.modal-close {
+position: absolute;
+top: 16px;
+right: 16px;
+background: none;
+border: none;
+color: var(–muted);
+font-size: 24px;
+cursor: pointer;
+line-height: 1;
+}
+
+.modal-close:hover { color: var(–white); }
+
+.modal-eyebrow {
+font-size: 10px;
+font-weight: 600;
+letter-spacing: 3px;
+text-transform: uppercase;
+color: var(–accent);
+margin-bottom: 8px;
+}
+
+.modal-title {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 42px;
+letter-spacing: 1px;
+color: var(–white);
+margin-bottom: 24px;
+line-height: 1.1;
+}
+
+.modal-section {
+margin-bottom: 24px;
+}
+
+.modal-section-label {
+font-size: 10px;
+font-weight: 700;
+letter-spacing: 3px;
+text-transform: uppercase;
+color: var(–muted);
+margin-bottom: 10px;
+padding-bottom: 6px;
+border-bottom: 1px solid var(–border);
+}
+
+.modal-ingredient {
+display: flex;
+gap: 10px;
+padding: 6px 0;
+font-size: 13px;
+color: var(–text);
+border-bottom: 1px solid #1a1a1a;
+}
+
+.modal-ingredient:last-child { border-bottom: none; }
+
+.ing-amount {
+color: var(–accent);
+min-width: 80px;
+font-weight: 500;
+}
+
+.modal-step {
+display: flex;
+gap: 16px;
+margin-bottom: 14px;
+font-size: 13px;
+color: var(–text);
+line-height: 1.6;
+}
+
+.step-num {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 20px;
+color: var(–accent);
+flex-shrink: 0;
+width: 24px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+nav { padding: 16px 20px; }
+.page { padding: 20px; }
+.today-hero { grid-template-columns: 1fr; }
+.week-grid { grid-template-columns: repeat(4, 1fr); }
+.meals-grid { grid-template-columns: 1fr 1fr; }
+.shopping-categories { grid-template-columns: 1fr; }
+.nav-logo { font-size: 22px; }
+.nav-tab { padding: 6px 10px; font-size: 10px; }
+}
+</style>
+
 </head>
 <body>
-<h1>The Table</h1>
-<p>Coming soon.</p>
+
+<nav>
+  <div class="nav-logo">THE <span>TABLE</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('today')">Today</button>
+    <button class="nav-tab" onclick="showPage('week')">This Week</button>
+    <button class="nav-tab" onclick="showPage('meals')">Meals</button>
+    <button class="nav-tab" onclick="showPage('shopping')">Shopping</button>
+  </div>
+</nav>
+
+<!-- TODAY PAGE -->
+
+<div class="page active" id="page-today">
+
+  <div class="today-hero">
+    <div class="hero-card">
+      <div class="card-eyebrow" id="today-date-label">Today</div>
+      <div class="card-title" id="today-day-name">Monday</div>
+      <div class="card-sub" id="today-full-date">April 6, 2026</div>
+    </div>
+    <div class="hero-card accent-card">
+      <div class="card-eyebrow">Tonight's Dinner</div>
+      <div class="dinner-name" id="tonight-dinner">—</div>
+      <div class="dinner-meta" id="tonight-meta">—</div>
+      <button class="view-recipe-btn" id="tonight-recipe-btn" onclick="openTonightRecipe()">View Recipe</button>
+    </div>
+  </div>
+
+  <div class="section-label">Today's Meal Plan</div>
+  <div class="timeline" id="meal-timeline"></div>
+
+</div>
+
+<!-- WEEK PAGE -->
+
+<div class="page" id="page-week">
+  <div class="section-label" style="margin-bottom:20px">This Week at a Glance</div>
+  <div class="week-grid" id="week-grid"></div>
+</div>
+
+<!-- MEALS PAGE -->
+
+<div class="page" id="page-meals">
+  <div class="section-label" style="margin-bottom:20px">Recipe Library</div>
+  <div class="meals-grid" id="meals-grid"></div>
+</div>
+
+<!-- SHOPPING PAGE -->
+
+<div class="page" id="page-shopping">
+  <div class="shopping-header">
+    <div class="shopping-week-label" id="shopping-week-label">This Week's List</div>
+    <button class="view-recipe-btn" onclick="clearChecked()">Clear Checked</button>
+  </div>
+  <div class="shopping-categories" id="shopping-list"></div>
+</div>
+
+<!-- RECIPE MODAL -->
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-content">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-eyebrow">Recipe</div>
+    <div class="modal-title" id="modal-title">—</div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+
+// ============================================================
+// DATA
+// ============================================================
+
+// Schedule anchor: April 6 2026 = ex has kids (Monday)
+// 2-2-3 pattern: ex Mon/Tue, Josh Wed/Thu, ex Fri/Sat/Sun, Josh Mon/Tue, ex Wed/Thu, Josh Fri/Sat/Sun
+const SCHEDULE_ANCHOR = new Date(2026, 3, 6); // April 6 2026
+
+function getKidStatus(date) {
+  const msPerDay = 86400000;
+  const daysSinceAnchor = Math.floor((date - SCHEDULE_ANCHOR) / msPerDay);
+  const posInCycle = ((daysSinceAnchor % 14) + 14) % 14;
+  // Cycle: 0=Mon ex, 1=Tue ex, 2=Wed Josh, 3=Thu Josh, 4=Fri ex, 5=Sat ex, 6=Sun ex,
+  //        7=Mon Josh, 8=Tue Josh, 9=Wed ex, 10=Thu ex, 11=Fri Josh, 12=Sat Josh, 13=Sun Josh
+  const joshDays = [2,3,7,8,11,12,13];
+  return joshDays.includes(posInCycle) ? 'kids' : 'solo';
+}
+
+// Meals database
+const MEALS = [
+  {
+    id: 1,
+    name: 'Grilled Chicken & Broccoli',
+    emoji: '🍗',
+    type: 'solo',
+    cookTime: '25 min',
+    ingredients: [
+      { amount: '6 oz', item: 'chicken breast' },
+      { amount: '2 cups', item: 'broccoli florets' },
+      { amount: '½ cup', item: 'brown rice' },
+      { amount: '1 tbsp', item: 'olive oil' },
+      { amount: 'to taste', item: 'salt, pepper, garlic powder' }
+    ],
+    steps: [
+      'Cook brown rice per package instructions.',
+      'Season chicken breast with salt, pepper, and garlic powder.',
+      'Heat olive oil in a pan over medium-high. Cook chicken 6–7 min per side until cooked through.',
+      'Steam broccoli until tender, about 5 minutes.',
+      'Plate chicken over rice with broccoli on the side.'
+    ]
+  },
+  {
+    id: 2,
+    name: 'Turkey Taco Bowl',
+    emoji: '🥩',
+    type: 'solo',
+    cookTime: '20 min',
+    ingredients: [
+      { amount: '½ lb', item: 'ground turkey' },
+      { amount: '1 cup', item: 'cauliflower rice' },
+      { amount: '¼ cup', item: 'salsa' },
+      { amount: '2 tbsp', item: 'shredded cheese' },
+      { amount: '1 packet', item: 'taco seasoning' }
+    ],
+    steps: [
+      'Brown ground turkey in a skillet over medium heat, breaking it apart.',
+      'Add taco seasoning and a splash of water. Stir and simmer 2 minutes.',
+      'Microwave cauliflower rice per package (usually 4 minutes).',
+      'Build bowl: cauliflower rice base, turkey, salsa, cheese on top.'
+    ]
+  },
+  {
+    id: 3,
+    name: 'Taco Night',
+    emoji: '🌮',
+    type: 'kids',
+    cookTime: '25 min',
+    ingredients: [
+      { amount: '1 lb', item: 'ground beef' },
+      { amount: '1 packet', item: 'taco seasoning' },
+      { amount: '8', item: 'taco shells or tortillas (for kids)' },
+      { amount: '—', item: 'toppings: cheese, salsa, lettuce, sour cream' },
+      { amount: '—', item: 'cauliflower rice (your bowl base)' }
+    ],
+    steps: [
+      'Brown ground beef in skillet, drain excess fat.',
+      'Add taco seasoning and ⅔ cup water. Simmer 3–4 minutes.',
+      'Set up toppings bar: cheese, salsa, lettuce, sour cream.',
+      'Kids build their tacos. You build a bowl over cauliflower rice — skip the shell.'
+    ]
+  },
+  {
+    id: 4,
+    name: 'Salmon & Roasted Veg',
+    emoji: '🐟',
+    type: 'solo',
+    cookTime: '30 min',
+    ingredients: [
+      { amount: '6 oz', item: 'salmon fillet' },
+      { amount: '2 cups', item: 'mixed vegetables (whatever\'s in the fridge)' },
+      { amount: '1 tbsp', item: 'olive oil' },
+      { amount: '1 tsp', item: 'garlic powder' },
+      { amount: 'to taste', item: 'salt, pepper, lemon' }
+    ],
+    steps: [
+      'Preheat oven to 400°F.',
+      'Toss vegetables in olive oil, salt, pepper. Spread on a sheet pan.',
+      'Roast vegetables 15 minutes.',
+      'Push veg to edges, place salmon in center. Season salmon with garlic, salt, pepper.',
+      'Roast another 12–15 minutes until salmon flakes easily. Finish with lemon.'
+    ]
+  },
+  {
+    id: 5,
+    name: 'Chicken Stir-Fry',
+    emoji: '🥢',
+    type: 'solo',
+    cookTime: '20 min',
+    ingredients: [
+      { amount: '6 oz', item: 'chicken breast, sliced thin' },
+      { amount: '1 bag', item: 'frozen stir-fry vegetables' },
+      { amount: '½ cup', item: 'brown rice' },
+      { amount: '2 tbsp', item: 'low-sodium soy sauce' },
+      { amount: '1 tsp', item: 'sesame oil (optional)' }
+    ],
+    steps: [
+      'Cook brown rice per package.',
+      'Heat a skillet or wok over high heat with a little oil.',
+      'Cook chicken slices 4–5 minutes until cooked through. Set aside.',
+      'Add frozen veg to same pan. Cook 4–5 minutes stirring often.',
+      'Return chicken, add soy sauce and sesame oil. Toss and serve over rice.'
+    ]
+  },
+  {
+    id: 6,
+    name: 'Sunday Crockpot',
+    emoji: '🍲',
+    type: 'both',
+    cookTime: 'Start night before',
+    ingredients: [
+      { amount: '2–3 lbs', item: 'chicken thighs or chuck roast' },
+      { amount: '1 can', item: 'diced tomatoes' },
+      { amount: '1 cup', item: 'chicken or beef broth' },
+      { amount: '2', item: 'carrots, chopped' },
+      { amount: '2', item: 'potatoes, cubed (kids) or skip (you)' },
+      { amount: '—', item: 'salt, pepper, garlic, onion powder' }
+    ],
+    steps: [
+      'Night before or early morning: add everything to crockpot.',
+      'Set on LOW for 8 hours or HIGH for 4–5 hours.',
+      'Shred meat when done. Serve over rice or with bread for kids.',
+      'Your portion: meat + veg, skip the potato and bread.'
+    ]
+  }
+];
+
+// Daily meal schedule
+function getMealSchedule(date) {
+  const day = date.getDay();
+  const status = getKidStatus(date);
+
+  const base = [
+    { time: '9:00 AM',  name: 'Breakfast', detail: '3 eggs + ¼ cup cheese', mealId: null },
+    { time: '11:30 AM', name: 'Snack',     detail: 'Oikos yogurt or almonds', mealId: null },
+    { time: '1:30 PM',  name: 'Lunch',     detail: 'Chicken + greens', mealId: null },
+    { time: '4:00 PM',  name: 'Snack',     detail: 'Oikos yogurt or almonds', mealId: null },
+    { time: '6:30 PM',  name: 'Dinner',    detail: '', mealId: null },
+    { time: '8:00 PM',  name: 'Kitchen Closed', detail: '', mealId: null, closed: true }
+  ];
+
+  // Tuesday lunch override
+  if (day === 2) {
+    base[2].detail = 'Staff lunch out — eat smart';
+  }
+
+  // Dinner logic
+  const dinnerMap = {
+    0: { mealId: 6, note: 'Sunday crockpot' }, // Sun
+    1: status === 'solo'
+      ? { mealId: 1, note: 'Solo night' }
+      : { mealId: 3, note: 'Kids night' },     // Mon
+    2: status === 'solo'
+      ? { mealId: 2, note: 'Solo night' }
+      : { mealId: 3, note: 'Kids night' },     // Tue
+    3: status === 'kids'
+      ? { mealId: 3, note: 'Kids night — keep it fast' }
+      : { mealId: 2, note: 'Solo night' },     // Wed
+    4: status === 'kids'
+      ? { mealId: 1, note: 'Kids night' }
+      : { mealId: 4, note: 'Solo night' },     // Thu
+    5: { mealId: 4, note: 'Solo — end week strong' }, // Fri
+    6: { mealId: 5, note: 'Solo night' }        // Sat
+  };
+
+  const dinner = dinnerMap[day] || { mealId: 1, note: '' };
+  const meal = MEALS.find(m => m.id === dinner.mealId);
+  base[4].detail = meal ? meal.name : '—';
+  base[4].mealId = dinner.mealId;
+  base[4].note = dinner.note;
+
+  return base;
+}
+
+// ============================================================
+// SHOPPING LIST
+// ============================================================
+
+function generateShoppingList() {
+  return {
+    'Protein': [
+      'Chicken breast (2–3 lbs)',
+      'Ground turkey (1 lb)',
+      'Ground beef (1 lb)',
+      'Salmon fillets (2)',
+      'Eggs (1 dozen)',
+    ],
+    'Dairy': [
+      'Shredded cheese (bag)',
+      'Oikos Triple Zero yogurt (6-pack)',
+    ],
+    'Produce': [
+      'Broccoli',
+      'Mixed salad greens',
+      'Lemons',
+      'Mixed vegetables for roasting',
+    ],
+    'Pantry': [
+      'Brown rice',
+      'Cauliflower rice (frozen)',
+      'Stir-fry vegetables (frozen bag)',
+      'Taco seasoning (2 packets)',
+      'Low-sodium soy sauce',
+      'Olive oil',
+      'Salsa',
+      'Almonds (¼ cup portions)',
+    ]
+  };
+}
+
+// ============================================================
+// UI
+// ============================================================
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function getCurrentMealIndex(schedule) {
+  const now = new Date();
+  const currentMins = now.getHours() * 60 + now.getMinutes();
+  let current = 0;
+  schedule.forEach((meal, i) => {
+    const [time, ampm] = meal.time.split(' ');
+    let [h, m] = time.split(':').map(Number);
+    if (ampm === 'PM' && h !== 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+    if (currentMins >= h * 60 + m) current = i;
+  });
+  return current;
+}
+
+function renderToday() {
+  const now = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  document.getElementById('today-day-name').textContent = days[now.getDay()];
+  document.getElementById('today-full-date').textContent =
+    months[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
+
+  const schedule = getMealSchedule(now);
+  const currentIdx = getCurrentMealIndex(schedule);
+  const dinner = schedule[4];
+  const dinnerMeal = MEALS.find(m => m.id === dinner.mealId);
+
+  document.getElementById('tonight-dinner').textContent = dinner.detail || '—';
+  document.getElementById('tonight-meta').textContent = dinner.note || '';
+  if (!dinnerMeal) document.getElementById('tonight-recipe-btn').style.display = 'none';
+
+  const timeline = document.getElementById('meal-timeline');
+  timeline.innerHTML = schedule.map((meal, i) => `
+    <div class="timeline-row ${i === currentIdx ? 'current' : ''} ${meal.closed ? 'closed' : ''}">
+      <span class="timeline-time">${meal.time}</span>
+      <div class="timeline-dot"></div>
+      <span class="timeline-meal">${meal.name}</span>
+      <span class="timeline-detail">${meal.detail}</span>
+      ${i === currentIdx ? '<span class="now-badge">Now</span>' : ''}
+    </div>
+  `).join('');
+}
+
+function renderWeek() {
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // Start of current week (Sunday)
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - today.getDay());
+
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(sunday);
+    date.setDate(sunday.getDate() + i);
+    const isToday = date.getTime() === today.getTime();
+    const schedule = getMealSchedule(date);
+    const dinner = schedule[4];
+    const status = getKidStatus(date);
+
+    grid.innerHTML += `
+      <div class="week-day ${isToday ? 'today' : ''}">
+        <div class="week-day-name">${days[date.getDay()]}</div>
+        <div class="week-day-num">${date.getDate()}</div>
+        <div class="week-meal-tag">${dinner.detail}</div>
+        <span class="week-who ${status}-tag">${status === 'kids' ? 'Kids' : 'Solo'}</span>
+      </div>
+    `;
+  }
+}
+
+function renderMeals() {
+  const grid = document.getElementById('meals-grid');
+  grid.innerHTML = MEALS.map(meal => `
+    <div class="meal-card" onclick="openRecipe(${meal.id})">
+      <div class="meal-card-img">${meal.emoji}</div>
+      <div class="meal-card-body">
+        <div class="meal-card-title">${meal.name}</div>
+        <div class="meal-card-meta">${meal.cookTime} · ${meal.type === 'kids' ? 'Family' : meal.type === 'both' ? 'Family' : 'Solo'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderShopping() {
+  const list = generateShoppingList();
+  const saved = JSON.parse(localStorage.getItem('checked') || '{}');
+  const container = document.getElementById('shopping-list');
+  container.innerHTML = Object.entries(list).map(([cat, items]) => `
+    <div class="shopping-cat">
+      <div class="shopping-cat-title">${cat}</div>
+      ${items.map(item => `
+        <div class="shopping-item ${saved[item] ? 'checked' : ''}" onclick="toggleCheck(this, '${item.replace(/'/g,"\\'")}')">
+          <div class="shop-check"></div>
+          <span class="shop-text">${item}</span>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function toggleCheck(el, item) {
+  el.classList.toggle('checked');
+  const saved = JSON.parse(localStorage.getItem('checked') || '{}');
+  if (el.classList.contains('checked')) saved[item] = true;
+  else delete saved[item];
+  localStorage.setItem('checked', JSON.stringify(saved));
+}
+
+function clearChecked() {
+  localStorage.removeItem('checked');
+  renderShopping();
+}
+
+function openRecipe(id) {
+  const meal = MEALS.find(m => m.id === id);
+  if (!meal) return;
+  document.getElementById('modal-title').textContent = meal.name;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-section">
+      <div class="modal-section-label">Ingredients</div>
+      ${meal.ingredients.map(ing => `
+        <div class="modal-ingredient">
+          <span class="ing-amount">${ing.amount}</span>
+          <span>${ing.item}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-label">Instructions</div>
+      ${meal.steps.map((step, i) => `
+        <div class="modal-step">
+          <span class="step-num">${i+1}</span>
+          <span>${step}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function openTonightRecipe() {
+  const now = new Date();
+  const schedule = getMealSchedule(now);
+  const dinner = schedule[4];
+  if (dinner.mealId) openRecipe(dinner.mealId);
+}
+
+function closeModal(event) {
+  if (!event || event.target === document.getElementById('modal-overlay') || event.target.classList.contains('modal-close')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+
+renderToday();
+renderWeek();
+renderMeals();
+renderShopping();
+
+</script>
+
 </body>
 </html>
