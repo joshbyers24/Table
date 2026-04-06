@@ -13,6 +13,7 @@
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
   window.pdfjsLib = pdfjsLib;
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --black: #fafbf8;
@@ -482,6 +483,9 @@ letter-spacing: 1px;
 color: var(--white);
 }
 
+.shopping-week-label .short-title { display: none; }
+.shopping-week-label .full-title { display: inline; }
+
 .shopping-categories {
 display: grid;
 grid-template-columns: 1fr 1fr;
@@ -738,6 +742,120 @@ width: 24px;
   color: var(--text);
 }
 
+/* STAR RATING */
+.rating-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.star-rating {
+  display: inline-flex;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.star-rating .star {
+  width: 28px;
+  height: 28px;
+  fill: var(--border);
+  transition: fill 0.1s;
+}
+
+.star-rating .star.filled { fill: var(--favorite); }
+.star-rating .star.half { fill: var(--favorite); clip-path: inset(0 50% 0 0); }
+
+.btn-favorite {
+  background: var(--accent-light);
+  color: var(--accent2);
+  border: 1px solid var(--accent);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-favorite.active {
+  background: var(--favorite);
+  color: white;
+  border-color: var(--favorite);
+}
+
+.btn-delete {
+  background: none;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-delete:hover { background: var(--danger); color: white; }
+
+/* FILTER BAR */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-chip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filter-chip:hover { border-color: var(--accent); }
+.filter-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+.filter-select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.mini-stars {
+  display: inline-flex;
+  gap: 1px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.mini-stars .mini-star {
+  width: 10px;
+  height: 10px;
+  fill: var(--border);
+}
+
+.mini-stars .mini-star.filled { fill: var(--favorite); }
+
 /* RESPONSIVE - TABLET */
 @media (max-width: 768px) {
 nav { padding: 16px 20px; }
@@ -767,6 +885,8 @@ nav { padding: 12px 16px; }
 .meals-grid { grid-template-columns: 1fr; }
 .modal { padding: 20px; margin: 8px; max-height: 95vh; }
 .shopping-week-label { font-size: 22px; }
+.shopping-week-label .full-title { display: none; }
+.shopping-week-label .short-title { display: inline; }
 }
 </style>
 
@@ -824,15 +944,16 @@ nav { padding: 12px 16px; }
 <!-- MEALS PAGE -->
 
 <div class="page" id="page-meals">
-  <div class="section-label" style="margin-bottom:20px">Recipe Library</div>
-  <div id="meals-container"></div>
+  <div class="section-label" style="margin-bottom:12px">Recipe Library</div>
+  <div class="filter-bar" id="filter-bar"></div>
+  <div class="meals-grid" id="meals-grid"></div>
 </div>
 
 <!-- SHOPPING PAGE -->
 
 <div class="page" id="page-shopping">
   <div class="shopping-header">
-    <div class="shopping-week-label" id="shopping-week-label">This Week's List</div>
+    <div class="shopping-week-label" id="shopping-week-label"><span class="full-title">This Week's List</span><span class="short-title">This Week</span></div>
     <button class="btn-small" onclick="clearChecked()">Clear Checked</button>
   </div>
   <div class="shopping-categories" id="shopping-list"></div>
@@ -850,6 +971,28 @@ nav { padding: 12px 16px; }
 </div>
 
 <script>
+
+// ============================================================
+// SUPABASE
+// ============================================================
+
+const supabase = window.supabase.createClient(
+  'https://gvbeyukbqbsyfzgidtqg.supabase.co',
+  'sb_publishable_XkCoDaLEQ45cp1tR_QDQiA_8OIWpxwM'
+);
+let ratingsCache = {};
+
+async function loadRatings() {
+  const { data } = await supabase.from('ratings').select('*');
+  if (data) data.forEach(r => ratingsCache[r.recipe_id] = r);
+}
+
+async function saveRating(recipeId, stars, isFavorite = false, isDeleted = false) {
+  ratingsCache[recipeId] = { recipe_id: recipeId, stars, is_favorite: isFavorite, is_deleted: isDeleted };
+  await supabase.from('ratings').upsert({
+    recipe_id: recipeId, stars, is_favorite: isFavorite, is_deleted: isDeleted, updated_at: new Date().toISOString()
+  });
+}
 
 // ============================================================
 // DATA
@@ -1062,6 +1205,60 @@ function isPdfRecipe(name) {
   return ALL_PDF_NAMES.has(name.toLowerCase());
 }
 function hfBadge() { return '<span class="hf-badge">HF</span>'; }
+
+// ============================================================
+// RECIPE REGISTRY
+// ============================================================
+
+function slugify(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+function guessProtein(name) {
+  const n = name.toLowerCase();
+  if (n.includes('chicken') || n.includes('poultry')) return 'chicken';
+  if (n.includes('beef') || n.includes('steak') || n.includes('sirloin') || n.includes('tenderloin') || n.includes('flautas')) return 'beef';
+  if (n.includes('pork') || n.includes('prosciutto') || n.includes('sausage') && !n.includes('chicken sausage')) return 'pork';
+  if (n.includes('turkey')) return 'turkey';
+  if (n.includes('salmon') || n.includes('shrimp') || n.includes('lobster') || n.includes('seafood') || n.includes('fish')) return 'seafood';
+  if (n.includes('meatball')) return 'beef';
+  if (n.includes('taco')) return 'beef';
+  return 'other';
+}
+
+const RECIPE_REGISTRY = [
+  ...MEALS.map(m => ({
+    id: 'meal-' + m.id,
+    name: m.name,
+    source: 'inline',
+    mealId: m.id,
+    protein: guessProtein(m.name),
+    mealType: m.type,
+    cookTime: m.cookTime,
+    emoji: m.emoji
+  })),
+  ...PDF_RECIPES.map(r => ({
+    id: 'pdf-' + slugify(r.name),
+    name: r.name,
+    source: 'pdf',
+    path: r.path,
+    protein: guessProtein(r.name),
+    mealType: 'both',
+    cookTime: null,
+    emoji: r.emoji
+  })),
+  ...SPECIAL_RECIPES.map(r => ({
+    id: 'special-' + slugify(r.name),
+    name: r.name,
+    source: 'pdf',
+    path: r.path,
+    protein: guessProtein(r.name),
+    mealType: 'both',
+    cookTime: null,
+    emoji: r.emoji,
+    category: 'special'
+  }))
+];
 
 // Daily meal schedule
 function getMealSchedule(date) {
@@ -1338,36 +1535,172 @@ function initThumbnails() {
   document.querySelectorAll('.meal-card-thumb[data-pdf-path]').forEach(el => observer.observe(el));
 }
 
-function renderMeals() {
-  const container = document.getElementById('meals-container');
-  container.innerHTML =
-    '<div class="meals-section-label">Weekly Rotation</div>' +
-    '<div class="meals-grid">' +
-    MEALS.map(meal => `
-      <div class="meal-card" onclick="openRecipe(${meal.id})">
-        <div class="meal-card-img">${meal.emoji}</div>
-        <div class="meal-card-body">
-          <div class="meal-card-title">${meal.name}</div>
-          <div class="meal-card-meta">${meal.cookTime} · ${meal.type === 'kids' ? 'Family' : meal.type === 'both' ? 'Family' : 'Solo'}</div>
-        </div>
-      </div>
-    `).join('') +
-    '</div>' +
-    '<div class="meals-section-label">Recipes</div>' +
-    '<div class="meals-grid">' + renderPdfCards(PDF_RECIPES) + '</div>' +
-    '<div class="meals-section-label">Special Dinners</div>' +
-    '<div class="meals-grid">' + renderPdfCards(SPECIAL_RECIPES) + '</div>';
+// ============================================================
+// STAR RATING
+// ============================================================
+
+function renderStarRating(recipeId) {
+  const rating = ratingsCache[recipeId] || {};
+  const stars = rating.stars || 0;
+  const isFav = rating.is_favorite || false;
+  const isDel = rating.is_deleted || false;
+
+  const starSvg = (i) => `<svg viewBox="0 0 24 24" class="star ${i <= stars ? 'filled' : ''}" onclick="event.stopPropagation(); setStarRating('${recipeId}', ${i})"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`;
+
+  return `
+    <div class="rating-section">
+      <div class="star-rating">${[1,2,3,4,5].map(i => starSvg(i)).join('')}</div>
+      <button class="btn-favorite ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('${recipeId}')">${isFav ? '★ Favorite' : '☆ Favorite'}</button>
+      <button class="btn-delete" onclick="event.stopPropagation(); toggleDeleted('${recipeId}')">${isDel ? 'Restore' : 'Remove'}</button>
+    </div>
+  `;
 }
 
-function renderShopping() {
+function renderMiniStars(recipeId) {
+  const rating = ratingsCache[recipeId] || {};
+  const stars = rating.stars || 0;
+  if (stars === 0) return '';
+  return `<span class="mini-stars">${[1,2,3,4,5].map(i =>
+    `<svg viewBox="0 0 24 24" class="mini-star ${i <= stars ? 'filled' : ''}"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`
+  ).join('')}</span>`;
+}
+
+async function setStarRating(recipeId, stars) {
+  const existing = ratingsCache[recipeId] || {};
+  await saveRating(recipeId, stars, existing.is_favorite || false, existing.is_deleted || false);
+  refreshRatingUI(recipeId);
+}
+
+async function toggleFavorite(recipeId) {
+  const existing = ratingsCache[recipeId] || {};
+  const newFav = !(existing.is_favorite || false);
+  await saveRating(recipeId, existing.stars || 0, newFav, existing.is_deleted || false);
+  refreshRatingUI(recipeId);
+}
+
+async function toggleDeleted(recipeId) {
+  const existing = ratingsCache[recipeId] || {};
+  const newDel = !(existing.is_deleted || false);
+  await saveRating(recipeId, existing.stars || 0, existing.is_favorite || false, newDel);
+  refreshRatingUI(recipeId);
+  renderMeals();
+}
+
+function refreshRatingUI(recipeId) {
+  const el = document.getElementById('rating-' + recipeId);
+  if (el) el.innerHTML = renderStarRating(recipeId);
+}
+
+// ============================================================
+// FILTER STATE
+// ============================================================
+
+let activeProteinFilter = 'all';
+let activeRatingFilter = 0;
+let showFavoritesOnly = false;
+
+function setProteinFilter(protein) {
+  activeProteinFilter = protein;
+  showFavoritesOnly = false;
+  renderMeals();
+}
+
+function setFavoritesFilter() {
+  showFavoritesOnly = !showFavoritesOnly;
+  if (showFavoritesOnly) activeProteinFilter = 'all';
+  renderMeals();
+}
+
+function setRatingFilter(minStars) {
+  activeRatingFilter = parseInt(minStars) || 0;
+  renderMeals();
+}
+
+function renderMeals() {
+  // Filter bar
+  const proteins = ['all', 'chicken', 'beef', 'pork', 'turkey', 'seafood'];
+  const filterBar = document.getElementById('filter-bar');
+  filterBar.innerHTML = proteins.map(p =>
+    `<button class="filter-chip ${activeProteinFilter === p && !showFavoritesOnly ? 'active' : ''}" onclick="setProteinFilter('${p}')">${p === 'all' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}</button>`
+  ).join('') +
+    `<button class="filter-chip ${showFavoritesOnly ? 'active' : ''}" onclick="setFavoritesFilter()">★ Favorites</button>` +
+    `<select class="filter-select" onchange="setRatingFilter(this.value)">
+      <option value="0" ${activeRatingFilter === 0 ? 'selected' : ''}>Any Rating</option>
+      <option value="1" ${activeRatingFilter === 1 ? 'selected' : ''}>★+ (1+)</option>
+      <option value="2" ${activeRatingFilter === 2 ? 'selected' : ''}>★★+ (2+)</option>
+      <option value="3" ${activeRatingFilter === 3 ? 'selected' : ''}>★★★+ (3+)</option>
+      <option value="4" ${activeRatingFilter === 4 ? 'selected' : ''}>★★★★+ (4+)</option>
+      <option value="5" ${activeRatingFilter === 5 ? 'selected' : ''}>★★★★★ (5)</option>
+    </select>`;
+
+  // Filter recipes
+  let recipes = RECIPE_REGISTRY.filter(r => {
+    const rating = ratingsCache[r.id] || {};
+    // Hide deleted by default
+    if (rating.is_deleted) return false;
+    // Protein filter
+    if (activeProteinFilter !== 'all' && r.protein !== activeProteinFilter) return false;
+    // Favorites filter
+    if (showFavoritesOnly && !rating.is_favorite) return false;
+    // Rating filter
+    if (activeRatingFilter > 0 && (rating.stars || 0) < activeRatingFilter) return false;
+    return true;
+  });
+
+  // Render grid
+  const grid = document.getElementById('meals-grid');
+  grid.innerHTML = recipes.map(r => {
+    if (r.source === 'inline') {
+      const meal = MEALS.find(m => m.id === r.mealId);
+      return `
+        <div class="meal-card" onclick="openRecipe(${r.mealId})">
+          <div class="meal-card-img">${r.emoji}</div>
+          <div class="meal-card-body">
+            <div class="meal-card-title">${r.name}${renderMiniStars(r.id)}</div>
+            <div class="meal-card-meta">${meal.cookTime} · ${meal.type === 'kids' ? 'Family' : meal.type === 'both' ? 'Family' : 'Solo'}</div>
+          </div>
+        </div>
+      `;
+    } else {
+      return `
+        <div class="meal-card" onclick="openPdfRecipe('${r.path.replace(/'/g,"\\'")}', '${r.name.replace(/'/g,"\\'")}')">
+          <div class="meal-card-thumb" data-pdf-path="${r.path}">
+            <div class="meal-card-strip" style="position:absolute;top:0;left:0;right:0;z-index:1"></div>
+          </div>
+          <div class="meal-card-body">
+            <div class="meal-card-title">${r.name}${renderMiniStars(r.id)}${r.category === 'special' ? ' <span class="hf-badge">Special</span>' : ''}</div>
+            <div class="meal-card-meta">PDF Recipe${r.category === 'special' ? ' · Special Dinner' : ''}</div>
+          </div>
+        </div>
+      `;
+    }
+  }).join('');
+
+  // Re-init thumbnails for newly rendered cards
+  setTimeout(initThumbnails, 100);
+}
+
+function getWeekKey() {
+  const now = new Date();
+  const jan1 = new Date(now.getFullYear(), 0, 1);
+  const dayOfYear = Math.floor((now - jan1) / 86400000) + 1;
+  const weekNum = Math.ceil((dayOfYear + jan1.getDay()) / 7);
+  return now.getFullYear() + '-W' + String(weekNum).padStart(2, '0');
+}
+
+async function renderShopping() {
   const list = generateShoppingList();
-  const saved = JSON.parse(localStorage.getItem('checked') || '{}');
+  const weekKey = getWeekKey();
+  const { data } = await supabase.from('shopping').select('*').eq('week_key', weekKey);
+  const checkedItems = {};
+  if (data) data.forEach(d => checkedItems[d.item] = true);
+
   const container = document.getElementById('shopping-list');
   container.innerHTML = Object.entries(list).map(([cat, items]) => `
     <div class="shopping-cat">
       <div class="shopping-cat-title">${cat}</div>
       ${items.map(item => `
-        <div class="shopping-item ${saved[item] ? 'checked' : ''}" onclick="toggleCheck(this, '${item.replace(/'/g,"\\'")}')">
+        <div class="shopping-item ${checkedItems[item] ? 'checked' : ''}" onclick="toggleCheck(this, '${item.replace(/'/g,"\\'")}')">
           <div class="shop-check"></div>
           <span class="shop-text">${item}</span>
         </div>
@@ -1376,26 +1709,33 @@ function renderShopping() {
   `).join('');
 }
 
-function toggleCheck(el, item) {
+async function toggleCheck(el, item) {
   el.classList.toggle('checked');
-  const saved = JSON.parse(localStorage.getItem('checked') || '{}');
-  if (el.classList.contains('checked')) saved[item] = true;
-  else delete saved[item];
-  localStorage.setItem('checked', JSON.stringify(saved));
+  const weekKey = getWeekKey();
+  if (el.classList.contains('checked')) {
+    await supabase.from('shopping').upsert({ week_key: weekKey, item, checked: true });
+  } else {
+    await supabase.from('shopping').delete().eq('week_key', weekKey).eq('item', item);
+  }
 }
 
-function clearChecked() {
-  localStorage.removeItem('checked');
-  renderShopping();
+async function clearChecked() {
+  const weekKey = getWeekKey();
+  await supabase.from('shopping').delete().eq('week_key', weekKey);
+  await renderShopping();
 }
 
 let currentPdf = null;
 let currentPdfPage = 1;
 
 async function openPdfRecipe(path, name) {
+  // Find registry ID for this recipe
+  const reg = RECIPE_REGISTRY.find(r => r.name === name);
+  const recipeId = reg ? reg.id : 'pdf-' + slugify(name);
   document.getElementById('modal-title').textContent = name;
   document.getElementById('modal-content').classList.add('pdf-modal');
   document.getElementById('modal-body').innerHTML = `
+    <div id="rating-${recipeId}">${renderStarRating(recipeId)}</div>
     <div class="pdf-viewer">
       <div class="pdf-nav">
         <button id="pdf-prev" onclick="pdfPrevPage()">&#8249; Prev</button>
@@ -1446,8 +1786,10 @@ function pdfNextPage() {
 function openRecipe(id) {
   const meal = MEALS.find(m => m.id === id);
   if (!meal) return;
+  const recipeId = 'meal-' + id;
   document.getElementById('modal-title').textContent = meal.name;
   document.getElementById('modal-body').innerHTML = `
+    <div id="rating-${recipeId}">${renderStarRating(recipeId)}</div>
     <div class="modal-section">
       <div class="modal-section-label">Ingredients</div>
       ${meal.ingredients.map(ing => `
@@ -1503,11 +1845,21 @@ function closeModal(event) {
 // INIT
 // ============================================================
 
-renderToday();
-renderWeek();
-renderMeals();
-renderShopping();
-setTimeout(initThumbnails, 1000); // Wait for pdf.js to load
+(async function init() {
+  await loadRatings();
+  renderToday();
+  renderWeek();
+  renderMeals();
+  await renderShopping();
+  setTimeout(initThumbnails, 1000);
+
+  // Realtime shopping sync
+  supabase.channel('shopping-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'shopping' }, () => {
+      renderShopping();
+    })
+    .subscribe();
+})();
 
 </script>
 
