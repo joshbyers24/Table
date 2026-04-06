@@ -201,9 +201,16 @@ transition: border-color 0.15s;
 }
 
 .timeline-row.current {
+background: #f0f9eb;
 border-color: var(--accent);
-background: var(--accent-light);
 }
+
+.timeline-row.closed {
+background: #fef2f2;
+border-color: #fecaca;
+}
+.timeline-row.closed .timeline-time { color: #dc2626; }
+.timeline-row.closed .timeline-meal { color: #991b1b; }
 
 .timeline-time {
 font-size: 11px;
@@ -960,7 +967,11 @@ nav { padding: 12px 16px; }
 
 <div class="page" id="page-shopping">
   <div class="shopping-header">
-    <div class="shopping-week-label" id="shopping-week-label"><span class="full-title">This Week's List</span><span class="short-title">This Week</span></div>
+    <div style="display:flex;align-items:center;gap:12px;flex:1">
+      <button class="date-arrow" onclick="navigateShoppingWeek(-1)">&#8249;</button>
+      <div class="shopping-week-label" id="shopping-week-label">Apr 5 - Apr 11</div>
+      <button class="date-arrow" onclick="navigateShoppingWeek(1)">&#8250;</button>
+    </div>
     <button class="btn-small" onclick="clearChecked()">Clear Checked</button>
   </div>
   <div class="shopping-categories" id="shopping-list"></div>
@@ -1267,6 +1278,56 @@ const RECIPE_REGISTRY = [
   }))
 ];
 
+// Seeded PRNG for deterministic dinner selection
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
+function getDateSeed(date) {
+  return date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+}
+
+function getDinnerForDate(date) {
+  const status = getKidStatus(date);
+  const pool = RECIPE_REGISTRY.filter(r => {
+    if (ratingsCache[r.id]?.is_deleted) return false;
+    if (status === 'kids') return r.mealType === 'kids' || r.mealType === 'both';
+    return r.mealType === 'solo' || r.mealType === 'both';
+  });
+  if (pool.length === 0) return null;
+
+  // Get recent meals to avoid repeats
+  const recent = [];
+  for (let d = 1; d <= 5; d++) {
+    const prev = new Date(date);
+    prev.setDate(prev.getDate() - d);
+    const prevRng = mulberry32(getDateSeed(prev));
+    const prevPool = RECIPE_REGISTRY.filter(r => {
+      if (ratingsCache[r.id]?.is_deleted) return false;
+      const prevStatus = getKidStatus(prev);
+      if (prevStatus === 'kids') return r.mealType === 'kids' || r.mealType === 'both';
+      return r.mealType === 'solo' || r.mealType === 'both';
+    });
+    if (prevPool.length > 0) {
+      const prevIdx = Math.floor(prevRng() * prevPool.length);
+      if (prevPool[prevIdx]) recent.push(prevPool[prevIdx].id);
+    }
+  }
+
+  // Pick from pool avoiding recent
+  const rng = mulberry32(getDateSeed(date));
+  let available = pool.filter(r => !recent.includes(r.id));
+  if (available.length === 0) available = pool;
+
+  const idx = Math.floor(rng() * available.length);
+  return available[idx];
+}
+
 // Daily meal schedule
 function getMealSchedule(date) {
   const day = date.getDay();
@@ -1277,39 +1338,21 @@ function getMealSchedule(date) {
     { time: '11:30 AM', name: 'Snack',     detail: 'Oikos yogurt or almonds', mealId: null },
     { time: '1:30 PM',  name: 'Lunch',     detail: 'Chicken + greens', mealId: null },
     { time: '4:00 PM',  name: 'Snack',     detail: 'Oikos yogurt or almonds', mealId: null },
-    { time: '6:30 PM',  name: 'Dinner',    detail: '', mealId: null },
+    { time: '6:30 PM',  name: 'Dinner',    detail: '', mealId: null, recipeId: null },
     { time: '8:00 PM',  name: 'Kitchen Closed', detail: '', mealId: null, closed: true }
   ];
 
-  // Tuesday lunch override
   if (day === 2) {
     base[2].detail = 'Staff lunch out — eat smart';
   }
 
-  // Dinner logic
-  const dinnerMap = {
-    0: { mealId: 6, note: 'Sunday crockpot' }, // Sun
-    1: status === 'solo'
-      ? { mealId: 1, note: 'Solo night' }
-      : { mealId: 3, note: 'Kids night' },     // Mon
-    2: status === 'solo'
-      ? { mealId: 2, note: 'Solo night' }
-      : { mealId: 3, note: 'Kids night' },     // Tue
-    3: status === 'kids'
-      ? { mealId: 3, note: 'Kids night — keep it fast' }
-      : { mealId: 2, note: 'Solo night' },     // Wed
-    4: status === 'kids'
-      ? { mealId: 1, note: 'Kids night' }
-      : { mealId: 4, note: 'Solo night' },     // Thu
-    5: { mealId: 4, note: 'Solo — end week strong' }, // Fri
-    6: { mealId: 5, note: 'Solo night' }        // Sat
-  };
-
-  const dinner = dinnerMap[day] || { mealId: 1, note: '' };
-  const meal = MEALS.find(m => m.id === dinner.mealId);
-  base[4].detail = meal ? meal.name : '—';
-  base[4].mealId = dinner.mealId;
-  base[4].note = dinner.note;
+  const recipe = getDinnerForDate(date);
+  if (recipe) {
+    base[4].detail = recipe.name;
+    base[4].recipeId = recipe.id;
+    if (recipe.source === 'inline') base[4].mealId = recipe.mealId;
+    base[4].note = status === 'kids' ? 'Kids night' : 'Solo night';
+  }
 
   return base;
 }
@@ -1318,36 +1361,86 @@ function getMealSchedule(date) {
 // SHOPPING LIST
 // ============================================================
 
+let currentShoppingWeekStart = null;
+
+function getShoppingWeekStart() {
+  if (!currentShoppingWeekStart) {
+    currentShoppingWeekStart = new Date();
+    currentShoppingWeekStart.setHours(0,0,0,0);
+    currentShoppingWeekStart.setDate(currentShoppingWeekStart.getDate() - currentShoppingWeekStart.getDay());
+  }
+  return new Date(currentShoppingWeekStart);
+}
+
+function navigateShoppingWeek(delta) {
+  getShoppingWeekStart();
+  currentShoppingWeekStart.setDate(currentShoppingWeekStart.getDate() + (delta * 7));
+  renderShopping();
+}
+
 function generateShoppingList() {
-  return {
-    'Protein': [
-      'Chicken breast (2-3 lbs)',
-      'Ground turkey (1 lb)',
-      'Ground beef (1 lb)',
-      'Salmon fillets (2)',
+  const sunday = getShoppingWeekStart();
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const satDate = new Date(sunday);
+  satDate.setDate(sunday.getDate() + 6);
+
+  // Update week label
+  const label = document.getElementById('shopping-week-label');
+  if (label) {
+    label.textContent = monthNames[sunday.getMonth()] + ' ' + sunday.getDate() + ' - ' +
+      monthNames[satDate.getMonth()] + ' ' + satDate.getDate();
+  }
+
+  const categories = {
+    'Basics (Every Week)': [
       'Eggs (1 dozen)',
-    ],
-    'Dairy': [
-      'Shredded cheese (bag)',
       'Oikos Triple Zero yogurt (6-pack)',
-    ],
-    'Produce': [
-      'Broccoli',
+      'Chicken breast (2-3 lbs for lunch)',
       'Mixed salad greens',
-      'Lemons',
-      'Mixed vegetables for roasting',
-    ],
-    'Pantry': [
-      'Brown rice',
-      'Cauliflower rice (frozen)',
-      'Stir-fry vegetables (frozen bag)',
-      'Taco seasoning (2 packets)',
-      'Low-sodium soy sauce',
-      'Olive oil',
-      'Salsa',
       'Almonds (¼ cup portions)',
+      'Shredded cheese (bag)',
     ]
   };
+
+  // Gather dinner recipes for the week
+  const inlineIngredients = {};
+  const hfMeals = [];
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(sunday);
+    date.setDate(sunday.getDate() + i);
+    const recipe = getDinnerForDate(date);
+    if (!recipe) continue;
+
+    if (recipe.source === 'inline') {
+      const meal = MEALS.find(m => m.id === recipe.mealId);
+      if (meal && meal.ingredients) {
+        meal.ingredients.forEach(ing => {
+          const key = ing.item;
+          if (!inlineIngredients[key]) {
+            inlineIngredients[key] = { amount: ing.amount, item: ing.item };
+          }
+        });
+      }
+    } else {
+      const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      hfMeals.push(dayNames[date.getDay()] + ': ' + recipe.name);
+    }
+  }
+
+  // Add dinner ingredients
+  const dinnerItems = Object.values(inlineIngredients).map(ing =>
+    ing.amount !== 'to taste' && ing.amount !== '—' ? ing.amount + ' ' + ing.item : ing.item
+  );
+  if (dinnerItems.length > 0) {
+    categories['Dinner Ingredients'] = dinnerItems;
+  }
+
+  if (hfMeals.length > 0) {
+    categories['HelloFresh Meals (check cards)'] = hfMeals;
+  }
+
+  return categories;
 }
 
 // ============================================================
@@ -1391,6 +1484,8 @@ function showPage(id) {
   document.getElementById('page-' + id).classList.add('active');
   const tab = document.querySelector('.nav-tab[data-page="' + id + '"]');
   if (tab) tab.classList.add('active');
+  if (id === 'today') { currentViewDate = new Date(); renderToday(); }
+  if (id === 'meals') { setTimeout(initThumbnails, 100); }
   window.scrollTo(0, 0);
 }
 
@@ -1429,26 +1524,23 @@ function renderToday() {
   const schedule = getMealSchedule(viewDate);
   const currentIdx = viewing ? getCurrentMealIndex(schedule) : -1;
   const dinner = schedule[4];
-  const dinnerMeal = MEALS.find(m => m.id === dinner.mealId);
 
   const dinnerName = dinner.detail || '—';
-  document.getElementById('tonight-dinner').innerHTML = dinnerName + (isPdfRecipe(dinnerName) ? ' ' + hfBadge() : '');
+  document.getElementById('tonight-dinner').textContent = dinnerName;
   document.getElementById('tonight-meta').textContent = dinner.note || '';
 
   const recipeBtn = document.getElementById('tonight-recipe-btn');
-  recipeBtn.style.display = (dinnerMeal || findPdfRecipe(dinnerName)) ? '' : 'none';
+  recipeBtn.style.display = dinner.recipeId ? '' : 'none';
 
   const timeline = document.getElementById('meal-timeline');
   timeline.innerHTML = schedule.map((meal, i) => {
-    const hasRecipe = meal.mealId || findPdfRecipe(meal.detail);
-    const clickAttr = hasRecipe ? `onclick="openMealFromTimeline('${meal.detail.replace(/'/g,"\\'")}'${meal.mealId ? ', ' + meal.mealId : ''})" ` : '';
+    const clickAttr = meal.recipeId ? `onclick="openMealFromTimeline('${meal.recipeId}')"` : '';
     return `
-    <div class="timeline-row ${i === currentIdx ? 'current' : ''} ${meal.closed ? 'closed' : ''} ${hasRecipe ? 'clickable' : ''}" ${clickAttr}>
+    <div class="timeline-row ${i === currentIdx ? 'current' : ''} ${meal.closed ? 'closed' : ''} ${meal.recipeId ? 'clickable' : ''}" ${clickAttr}>
       <span class="timeline-time">${meal.time}</span>
       <div class="timeline-dot"></div>
       <span class="timeline-meal">${meal.name}</span>
-      <span class="timeline-detail">${meal.detail}${isPdfRecipe(meal.detail) ? ' ' + hfBadge() : ''}</span>
-      ${i === currentIdx ? '<span class="now-badge">Now</span>' : ''}
+      <span class="timeline-detail">${meal.detail}</span>
     </div>
   `}).join('');
 }
@@ -1485,7 +1577,7 @@ function renderWeek() {
       <div class="week-day clickable ${isTodayDate ? 'today' : ''}" onclick="viewDayFromWeek('${dateStr}')">
         <div class="week-day-name">${dayNames[date.getDay()]}</div>
         <div class="week-day-num">${date.getDate()}</div>
-        <div class="week-meal-tag">${dinner.detail}${isPdfRecipe(dinner.detail) ? ' ' + hfBadge() : ''}</div>
+        <div class="week-meal-tag">${dinner.detail}</div>
         <span class="week-who ${status}-tag">${status === 'kids' ? 'Kids' : 'Solo'}</span>
       </div>
     `;
@@ -1524,22 +1616,35 @@ function initThumbnails() {
         }
         const pdf = await window.pdfjsLib.getDocument(encodeURI(path)).promise;
         const page = await pdf.getPage(1);
-        const scale = 0.4;
+        const scale = 0.3;
         const viewport = page.getViewport({ scale });
         const canvas = document.createElement('canvas');
         canvas.width = viewport.width;
         canvas.height = viewport.height;
         const ctx = canvas.getContext('2d');
         await page.render({ canvasContext: ctx, viewport }).promise;
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-        try { sessionStorage.setItem('thumb:' + path, dataUrl); } catch(e) {}
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.4);
+        try {
+          sessionStorage.setItem('thumb:' + path, dataUrl);
+        } catch(e) {
+          // sessionStorage full — clear old thumbs and retry once
+          try {
+            const keysToRemove = [];
+            for (let k = 0; k < sessionStorage.length; k++) {
+              const key = sessionStorage.key(k);
+              if (key && key.startsWith('thumb:')) keysToRemove.push(key);
+            }
+            keysToRemove.forEach(k => sessionStorage.removeItem(k));
+            sessionStorage.setItem('thumb:' + path, dataUrl);
+          } catch(e2) { /* give up caching */ }
+        }
         el.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover">';
       } catch(e) {
-        // Keep the strip fallback
+        el.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">PDF</div>';
       }
     });
   }, { rootMargin: '200px' });
-  document.querySelectorAll('.meal-card-thumb[data-pdf-path]').forEach(el => observer.observe(el));
+  document.querySelectorAll('.meal-card-thumb[data-pdf-path]:not([data-loaded])').forEach(el => observer.observe(el));
 }
 
 // ============================================================
@@ -1654,33 +1759,32 @@ function renderMeals() {
     return true;
   });
 
-  // Render grid
+  // Render grid - uniform cards for all recipes
   const grid = document.getElementById('meals-grid');
   grid.innerHTML = recipes.map(r => {
-    if (r.source === 'inline') {
-      const meal = MEALS.find(m => m.id === r.mealId);
-      return `
-        <div class="meal-card" onclick="openRecipe(${r.mealId})">
-          <div class="meal-card-img">${r.emoji}</div>
-          <div class="meal-card-body">
-            <div class="meal-card-title">${r.name}${renderMiniStars(r.id)}</div>
-            <div class="meal-card-meta">${meal.cookTime} · ${meal.type === 'kids' ? 'Family' : meal.type === 'both' ? 'Family' : 'Solo'}</div>
+    const clickHandler = r.source === 'inline'
+      ? `openRecipe(${r.mealId})`
+      : `openPdfRecipe('${r.path.replace(/'/g,"\\'")}', '${r.name.replace(/'/g,"\\'")}')`;
+    const thumbContent = r.source === 'pdf'
+      ? `<div class="meal-card-thumb" data-pdf-path="${r.path}"></div>`
+      : `<div class="meal-card-thumb" style="background:var(--accent-light);font-size:48px;display:flex;align-items:center;justify-content:center">${r.emoji}</div>`;
+    const metaParts = [];
+    if (r.cookTime) metaParts.push(r.cookTime);
+    const miniStars = renderMiniStars(r.id);
+    if (miniStars) metaParts.push(miniStars);
+    const hfTag = r.source === 'pdf' ? `<span class="hf-badge">${r.category === 'special' ? 'Special' : 'HF'}</span>` : '';
+    return `
+      <div class="meal-card" onclick="${clickHandler}">
+        ${thumbContent}
+        <div class="meal-card-body">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="meal-card-title">${r.name}</div>
+            ${hfTag}
           </div>
+          <div class="meal-card-meta">${metaParts.join(' · ')}</div>
         </div>
-      `;
-    } else {
-      return `
-        <div class="meal-card" onclick="openPdfRecipe('${r.path.replace(/'/g,"\\'")}', '${r.name.replace(/'/g,"\\'")}')">
-          <div class="meal-card-thumb" data-pdf-path="${r.path}">
-            <div class="meal-card-strip" style="position:absolute;top:0;left:0;right:0;z-index:1"></div>
-          </div>
-          <div class="meal-card-body">
-            <div class="meal-card-title">${r.name}${renderMiniStars(r.id)}${r.category === 'special' ? ' <span class="hf-badge">Special</span>' : ''}</div>
-            <div class="meal-card-meta">PDF Recipe${r.category === 'special' ? ' · Special Dinner' : ''}</div>
-          </div>
-        </div>
-      `;
-    }
+      </div>
+    `;
   }).join('');
 
   // Re-init thumbnails for newly rendered cards
@@ -1688,11 +1792,11 @@ function renderMeals() {
 }
 
 function getWeekKey() {
-  const now = new Date();
-  const jan1 = new Date(now.getFullYear(), 0, 1);
-  const dayOfYear = Math.floor((now - jan1) / 86400000) + 1;
+  const sunday = getShoppingWeekStart();
+  const jan1 = new Date(sunday.getFullYear(), 0, 1);
+  const dayOfYear = Math.floor((sunday - jan1) / 86400000) + 1;
   const weekNum = Math.ceil((dayOfYear + jan1.getDay()) / 7);
-  return now.getFullYear() + '-W' + String(weekNum).padStart(2, '0');
+  return sunday.getFullYear() + '-W' + String(weekNum).padStart(2, '0');
 }
 
 async function renderShopping() {
@@ -1819,23 +1923,21 @@ function openRecipe(id) {
   document.getElementById('modal-overlay').classList.add('open');
 }
 
-function openMealFromTimeline(mealName, mealId) {
-  if (mealId) {
-    openRecipe(mealId);
+function openMealFromTimeline(recipeId) {
+  const reg = RECIPE_REGISTRY.find(r => r.id === recipeId);
+  if (!reg) return;
+  if (reg.source === 'inline') {
+    openRecipe(reg.mealId);
   } else {
-    const pdf = findPdfRecipe(mealName);
-    if (pdf) openPdfRecipe(pdf.path, pdf.name);
+    openPdfRecipe(reg.path, reg.name);
   }
 }
 
 function openTonightRecipe() {
   const schedule = getMealSchedule(currentViewDate);
   const dinner = schedule[4];
-  if (dinner.mealId) {
-    openRecipe(dinner.mealId);
-  } else {
-    const pdf = findPdfRecipe(dinner.detail);
-    if (pdf) openPdfRecipe(pdf.path, pdf.name);
+  if (dinner.recipeId) {
+    openMealFromTimeline(dinner.recipeId);
   }
 }
 
