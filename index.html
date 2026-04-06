@@ -599,6 +599,26 @@ flex-shrink: 0;
 width: 24px;
 }
 
+/* WEEK HEADER */
+.week-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.week-range-label {
+  flex: 1;
+  text-align: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
+  letter-spacing: 1px;
+  color: var(--white);
+}
+
+.week-day.clickable { cursor: pointer; }
+.week-day.clickable:hover { border-color: var(--accent); }
+
 /* DATE NAVIGATION */
 .date-nav {
   display: flex;
@@ -732,7 +752,11 @@ nav { padding: 12px 16px; }
 <!-- WEEK PAGE -->
 
 <div class="page" id="page-week">
-  <div class="section-label" style="margin-bottom:20px">This Week at a Glance</div>
+  <div class="week-header">
+    <button class="date-arrow" onclick="navigateWeek(-1)">&#8249;</button>
+    <div class="week-range-label" id="week-range-label">This Week</div>
+    <button class="date-arrow" onclick="navigateWeek(1)">&#8250;</button>
+  </div>
   <div class="week-grid" id="week-grid"></div>
 </div>
 
@@ -1066,6 +1090,7 @@ function generateShoppingList() {
 // ============================================================
 
 let currentViewDate = new Date();
+let currentViewWeekStart = null; // null = current week
 
 function navigateDay(delta) {
   currentViewDate.setDate(currentViewDate.getDate() + delta);
@@ -1077,6 +1102,22 @@ function isToday(date) {
   return date.getDate() === now.getDate() &&
     date.getMonth() === now.getMonth() &&
     date.getFullYear() === now.getFullYear();
+}
+
+function navigateWeek(delta) {
+  if (!currentViewWeekStart) {
+    currentViewWeekStart = new Date();
+    currentViewWeekStart.setHours(0,0,0,0);
+    currentViewWeekStart.setDate(currentViewWeekStart.getDate() - currentViewWeekStart.getDay());
+  }
+  currentViewWeekStart.setDate(currentViewWeekStart.getDate() + (delta * 7));
+  renderWeek();
+}
+
+function viewDayFromWeek(dateStr) {
+  currentViewDate = new Date(dateStr + 'T12:00:00');
+  renderToday();
+  showPage('today');
 }
 
 function showPage(id) {
@@ -1148,13 +1189,20 @@ function renderToday() {
 }
 
 function renderWeek() {
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const today = new Date();
   today.setHours(0,0,0,0);
 
-  // Start of current week (Sunday)
-  const sunday = new Date(today);
-  sunday.setDate(today.getDate() - today.getDay());
+  const sunday = currentViewWeekStart ? new Date(currentViewWeekStart) : new Date(today);
+  if (!currentViewWeekStart) sunday.setDate(today.getDate() - today.getDay());
+
+  // Week range label
+  const satDate = new Date(sunday);
+  satDate.setDate(sunday.getDate() + 6);
+  const rangeLabel = monthNames[sunday.getMonth()] + ' ' + sunday.getDate() + ' - ' +
+    monthNames[satDate.getMonth()] + ' ' + satDate.getDate();
+  document.getElementById('week-range-label').textContent = rangeLabel;
 
   const grid = document.getElementById('week-grid');
   grid.innerHTML = '';
@@ -1162,14 +1210,15 @@ function renderWeek() {
   for (let i = 0; i < 7; i++) {
     const date = new Date(sunday);
     date.setDate(sunday.getDate() + i);
-    const isToday = date.getTime() === today.getTime();
+    const isTodayDate = date.getTime() === today.getTime();
     const schedule = getMealSchedule(date);
     const dinner = schedule[4];
     const status = getKidStatus(date);
+    const dateStr = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
 
     grid.innerHTML += `
-      <div class="week-day ${isToday ? 'today' : ''}">
-        <div class="week-day-name">${days[date.getDay()]}</div>
+      <div class="week-day clickable ${isTodayDate ? 'today' : ''}" onclick="viewDayFromWeek('${dateStr}')">
+        <div class="week-day-name">${dayNames[date.getDay()]}</div>
         <div class="week-day-num">${date.getDate()}</div>
         <div class="week-meal-tag">${dinner.detail}${isPdfRecipe(dinner.detail) ? ' ' + hfBadge() : ''}</div>
         <span class="week-who ${status}-tag">${status === 'kids' ? 'Kids' : 'Solo'}</span>
