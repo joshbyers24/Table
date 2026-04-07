@@ -1468,22 +1468,22 @@ async function loadRecipeImages() {
 
 async function extractRecipeImage(path) {
   if (!window.pdfjsLib) return null;
-  const cacheKey = 'img:' + path;
+  const cacheKey = 'img2:' + path;
   const cached = sessionStorage.getItem(cacheKey);
   if (cached) return cached;
   try {
     const pdf = await window.pdfjsLib.getDocument(encodeURI(path)).promise;
     const page = await pdf.getPage(1);
-    const scale = 0.6;
+    const dpr = window.devicePixelRatio || 1;
+    const scale = 2.0 * dpr;
     const viewport = page.getViewport({ scale });
     const canvas = document.createElement('canvas');
     canvas.width = viewport.width;
-    // Crop to top 40% for food photo
     const cropHeight = Math.floor(viewport.height * 0.4);
     canvas.height = cropHeight;
     const ctx = canvas.getContext('2d');
     await page.render({ canvasContext: ctx, viewport }).promise;
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
     try { sessionStorage.setItem(cacheKey, dataUrl); } catch(e) {}
     return dataUrl;
   } catch(e) { return null; }
@@ -1505,14 +1505,9 @@ function generatePlaceholderImage() {
 function getRecipeImage(recipeId, pdfPath) {
   // 1. Check uploaded images from Supabase
   if (recipeImageCache[recipeId]) return recipeImageCache[recipeId];
-  // 2. Check sessionStorage for extracted image
+  // 2. Check sessionStorage for extracted image (high quality)
   if (pdfPath) {
-    const cached = sessionStorage.getItem('img:' + pdfPath);
-    if (cached) return cached;
-  }
-  // 3. Check sessionStorage thumbnail cache (fallback)
-  if (pdfPath) {
-    const cached = sessionStorage.getItem('thumb:' + pdfPath);
+    const cached = sessionStorage.getItem('img2:' + pdfPath);
     if (cached) return cached;
   }
   // 4. Return null (will show placeholder)
@@ -3478,22 +3473,17 @@ function initThumbnails() {
           el.innerHTML = '<img src="' + recipeImageCache[rid] + '" style="width:100%;height:100%;object-fit:cover">';
           return;
         }
-        // Check extracted image cache
-        const imgCached = sessionStorage.getItem('img:' + path);
+        // Check extracted image cache (v2 = high quality)
+        const imgCached = sessionStorage.getItem('img2:' + path);
         if (imgCached) {
           el.innerHTML = '<img src="' + imgCached + '" style="width:100%;height:100%;object-fit:cover">';
           return;
         }
-        // Check old thumb cache as fallback
-        const cached = sessionStorage.getItem('thumb:' + path);
-        if (cached) {
-          el.innerHTML = '<img src="' + cached + '" style="width:100%;height:100%;object-fit:cover">';
-          return;
-        }
-        // Extract at higher quality, crop to food photo (top 40%)
+        // Extract at high quality, crop to food photo (top 40%)
         const pdf = await window.pdfjsLib.getDocument(encodeURI(path)).promise;
         const page = await pdf.getPage(1);
-        const scale = 0.6;
+        const dpr = window.devicePixelRatio || 1;
+        const scale = 2.0 * dpr;
         const viewport = page.getViewport({ scale });
         const canvas = document.createElement('canvas');
         canvas.width = viewport.width;
@@ -3501,19 +3491,19 @@ function initThumbnails() {
         canvas.height = cropHeight;
         const ctx = canvas.getContext('2d');
         await page.render({ canvasContext: ctx, viewport }).promise;
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         try {
-          sessionStorage.setItem('img:' + path, dataUrl);
+          sessionStorage.setItem('img2:' + path, dataUrl);
         } catch(e) {
           // sessionStorage full — clear old entries and retry
           try {
             const keysToRemove = [];
             for (let k = 0; k < sessionStorage.length; k++) {
               const key = sessionStorage.key(k);
-              if (key && (key.startsWith('thumb:') || key.startsWith('img:'))) keysToRemove.push(key);
+              if (key && (key.startsWith('thumb:') || key.startsWith('img:') || key.startsWith('img2:'))) keysToRemove.push(key);
             }
             keysToRemove.forEach(k => sessionStorage.removeItem(k));
-            sessionStorage.setItem('img:' + path, dataUrl);
+            sessionStorage.setItem('img2:' + path, dataUrl);
           } catch(e2) { /* give up caching */ }
         }
         el.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover">';
@@ -4453,6 +4443,15 @@ function editCurrentRecipe() {
 // ============================================================
 
 (async function init() {
+  // Clear stale low-quality image caches
+  try {
+    const stale = [];
+    for (let k = 0; k < sessionStorage.length; k++) {
+      const key = sessionStorage.key(k);
+      if (key && (key.startsWith('img:') || key.startsWith('thumb:'))) stale.push(key);
+    }
+    stale.forEach(k => sessionStorage.removeItem(k));
+  } catch(e) {}
   try { await loadRatings(); } catch(e) { console.warn('Ratings load failed:', e); }
   try { await loadRecipeImages(); } catch(e) { console.warn('Recipe images load failed:', e); }
   try { await loadCustomRecipes(); } catch(e) { console.warn('Custom recipes load failed:', e); }
