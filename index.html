@@ -4682,11 +4682,10 @@ async function saveRecipe() {
 
 function editCurrentRecipe() {
   if (!currentModalRecipeId) return;
-  // Close the current modal view first
-  document.getElementById('modal-overlay').classList.remove('open');
-  if (history.state && history.state.modal) history.back();
-  // Open editor
-  setTimeout(function() { openRecipeEditor(currentModalRecipeId); }, 50);
+  // Capture before any state mutation
+  const editId = currentModalRecipeId;
+  // Open editor directly - reuses the same modal
+  openRecipeEditor(editId);
 }
 
 // ============================================================
