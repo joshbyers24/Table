@@ -3324,20 +3324,14 @@ function renderStarRating(recipeId) {
   const rating = ratingsCache[recipeId] || {};
   const stars = rating.stars || 0;
   const isFav = rating.is_favorite || false;
-  const isDel = rating.is_deleted || false;
 
   const starSvg = (i) => `<svg viewBox="0 0 24 24" class="star ${i <= stars ? 'filled' : ''}" onclick="event.stopPropagation(); setStarRating('${recipeId}', ${i})"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`;
-
-  const isHF = isRecipeHellofresh(recipeId);
 
   return `
     <div class="rating-section">
       <div class="star-rating">${[1,2,3,4,5].map(i => starSvg(i)).join('')}</div>
       ${renderMealTypeToggle(recipeId)}
       <button class="btn-favorite ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('${recipeId}')">${isFav ? '★ Favorite' : '☆ Favorite'}</button>
-    </div>
-    <div style="margin-top:4px">
-      <button class="btn-delete" onclick="event.stopPropagation(); toggleDeleted('${recipeId}')">${isDel ? 'Restore recipe' : 'Remove from rotation'}</button>
     </div>
   `;
 }
@@ -3369,6 +3363,24 @@ async function toggleDeleted(recipeId) {
   const newDel = !(existing.is_deleted || false);
   await saveRating(recipeId, existing.stars || 0, existing.is_favorite || false, newDel);
   refreshRatingUI(recipeId);
+  renderMeals();
+}
+
+function confirmDeleteRecipe() {
+  if (confirm('Are you sure you want to delete this recipe? This cannot be undone.')) {
+    deleteRecipe(editorRecipeId);
+  }
+}
+
+async function deleteRecipe(recipeId) {
+  var current = ratingsCache[recipeId] || {};
+  await saveRating(recipeId, current.stars || 0, current.is_favorite || false, true, current.meal_type || null, current.is_hellofresh || null);
+
+  document.getElementById('modal-overlay').classList.remove('open');
+  if (history.state && history.state.modal) history.back();
+
+  renderToday();
+  renderWeek();
   renderMeals();
 }
 
@@ -3989,6 +4001,9 @@ function renderRecipeEditor(data) {
       '<div id="editor-steps">' + stepsHtml + '</div>' +
       '<button class="editor-add-btn" onclick="addEditorStep()" type="button">+ Add Step</button>' +
     '</div>' +
+    (editorRecipeId ? '<div style="border-top:1px solid var(--border);margin-top:24px;padding-top:16px">' +
+      '<button type="button" style="background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;text-decoration:underline" onclick="confirmDeleteRecipe()">Delete this recipe</button>' +
+    '</div>' : '') +
     '<div class="editor-actions">' +
       '<button class="editor-cancel" onclick="closeModal()" type="button">Cancel</button>' +
       '<button class="editor-save" onclick="saveRecipe()" type="button">Save Recipe</button>' +
