@@ -1231,6 +1231,243 @@ const SPECIAL_RECIPES = [
   { name: 'Sirloin and Sherry Shallot Sauce', emoji: '🥩', path: 'recipes/Special Dinners/sirloin-and-sherry-shallot-sauce.pdf' },
 ];
 
+// HelloFresh scraped recipe data (structured ingredients + steps)
+const HF_RECIPE_DATA = {
+  'Apricot Ponzu Chicken': {
+    prepTime: 10, totalTime: 30, calories: 610,
+    ingredients: [
+      { amount: '36 ml', item: 'Ponzu Sauce' },
+      { amount: '12 oz', item: 'Green Beans' },
+      { amount: '1 cup', item: 'Apricot Jam' },
+      { amount: '2 cups', item: 'Jasmine Rice' },
+      { amount: '2 cloves', item: 'Garlic' },
+      { amount: '20 oz', item: 'Chicken Cutlets' },
+      { amount: '2 thumbs', item: 'Ginger' },
+      { amount: '4 tbsp', item: 'Butter' },
+    ],
+    steps: [
+      'Prep veggies: trim green beans, mince garlic, peel and mince ginger.',
+      'Cook rice: bring water and salt to boil, add rice, cover and simmer 15-18 min.',
+      'Roast green beans with oil, salt, and pepper at 425\u00b0F for 12-15 min.',
+      'Cook chicken cutlets in oiled pan until golden and cooked through, 4-6 min per side.',
+      'Make sauce: melt butter, cook garlic and ginger, add ponzu and apricot jam, simmer until thickened.',
+      'Plate rice, top with green beans and chicken, drizzle with apricot ponzu sauce.',
+    ]
+  },
+  'BBQ Pineapple Flatbreads': {
+    prepTime: 10, totalTime: 35, calories: 740,
+    ingredients: [
+      { amount: '1', item: 'Red Onion' },
+      { amount: '4 oz', item: 'Pineapple' },
+      { amount: '5 tsp', item: 'Red Wine Vinegar' },
+      { amount: '1', item: 'Poblano Pepper' },
+      { amount: '4 oz', item: 'Fresh Mozzarella' },
+      { amount: '0.25 oz', item: 'Cilantro' },
+      { amount: '2', item: 'Flatbreads' },
+      { amount: '4 tbsp', item: 'BBQ Sauce' },
+      { amount: '0.25 cup', item: 'Monterey Jack Cheese' },
+    ],
+    steps: [
+      'Preheat oven to 450\u00b0F. Slice onion, drain pineapple, pickle 1/4 onion with vinegar and pineapple juice.',
+      'Caramelize remaining onion in pan over medium heat 6-8 min.',
+      'Slice poblano into strips, dice mozzarella, chop cilantro.',
+      'Add pineapple to pan, cook until browned 2-3 min, add vinegar and caramelize.',
+      'Oil flatbreads, spread with BBQ sauce, top with caramelized mixture, poblano, and cheeses.',
+      'Bake until cheese melts and edges brown 10-12 min. Top with cilantro and pickled onions.',
+    ]
+  },
+  'Beef Flautas Supreme': {
+    prepTime: 10, totalTime: 30, calories: 960,
+    ingredients: [
+      { amount: '2', item: 'Yellow Onion' },
+      { amount: '20 oz', item: 'Ground Beef' },
+      { amount: '2', item: 'Tex-Mex Paste' },
+      { amount: '2 tbsp', item: 'Southwest Spice Blend' },
+      { amount: '12', item: 'Flour Tortillas' },
+      { amount: '1 cup', item: 'Mexican Cheese Blend' },
+      { amount: '2', item: 'Lime' },
+      { amount: '2', item: 'Roma Tomato' },
+      { amount: '8 tbsp', item: 'Sour Cream' },
+    ],
+    steps: [
+      'Preheat oven to 425\u00b0F. Dice onion and tomato.',
+      'Cook onion and ground beef with Southwest spice and Tex-Mex paste until browned.',
+      'Fill tortillas with heaping 1/4 cup beef and 1 tbsp cheese, roll up tightly.',
+      'Place seam-side down on oiled baking sheet, brush with oil.',
+      'Bake on middle rack until golden brown and crispy, 8-12 min.',
+      'Make pico de gallo and lime crema. Serve flautas topped with pico and crema.',
+    ]
+  },
+  'Brown Sugar Bourbon Chicken': {
+    prepTime: 10, totalTime: 35, calories: 610,
+    ingredients: [
+      { amount: '3 tbsp', item: 'Sour Cream' },
+      { amount: '12 oz', item: 'Green Beans' },
+      { amount: '24 oz', item: 'Potatoes' },
+      { amount: '2', item: 'Chicken Stock Concentrate' },
+      { amount: '2', item: 'Brown Sugar Bourbon Seasoning' },
+      { amount: '2', item: 'Lemon' },
+      { amount: '2 cloves', item: 'Garlic' },
+      { amount: '2', item: 'Apple' },
+      { amount: '20 oz', item: 'Chicken Cutlets' },
+      { amount: '4', item: 'Scallions' },
+      { amount: '1 tsp', item: 'Sugar' },
+      { amount: '4 tbsp', item: 'Butter' },
+    ],
+    steps: [
+      'Dice potatoes, boil with garlic cloves in salted water 15-20 min until tender.',
+      'Dice apple, slice scallions, zest and quarter lemon.',
+      'Toss green beans with olive oil, salt, pepper; roast at 425\u00b0F for 12-15 min.',
+      'Pat chicken dry, season, coat with bourbon seasoning; sear 5-7 min per side.',
+      'In same pan, melt butter; cook apple and scallion whites 4-6 min. Add stock, water, sugar; simmer.',
+      'Mash potatoes with sour cream and butter. Toss green beans with lemon zest. Plate and serve.',
+    ]
+  },
+  'Bruschetta Chicken': {
+    prepTime: 10, totalTime: 35, calories: 770,
+    ingredients: [
+      { amount: '24 oz', item: 'Yukon Gold Potatoes' },
+      { amount: '12 oz', item: 'Asparagus' },
+      { amount: '0.5 cup', item: 'Panko Breadcrumbs' },
+      { amount: '1 cup', item: 'Mozzarella Cheese' },
+      { amount: '2 tsp', item: 'Italian Seasoning' },
+      { amount: '24 oz', item: 'Chicken Breasts' },
+      { amount: '8 oz', item: 'Bacon' },
+      { amount: '2', item: 'Lemon' },
+      { amount: '2', item: 'Roma Tomato' },
+      { amount: '1 oz', item: 'Basil' },
+      { amount: '6 tbsp', item: 'Butter' },
+    ],
+    steps: [
+      'Boil diced potatoes with chopped bacon until potatoes are tender, 15-18 min.',
+      'Mix panko, mozzarella, Italian seasoning, and olive oil for crust.',
+      'Roast asparagus with oil at 425\u00b0F until tender.',
+      'Sear chicken, then top with panko-mozzarella mixture and bake until golden.',
+      'Dice tomato, chop basil, mix with olive oil and lemon juice for bruschetta topping.',
+      'Mash potatoes with butter and bacon. Plate chicken topped with bruschetta.',
+    ]
+  },
+  'Crispy Maple Mustard Chicken': {
+    prepTime: 10, totalTime: 35, calories: 650,
+    ingredients: [
+      { amount: '24 oz', item: 'Yukon Gold Potatoes' },
+      { amount: '24 oz', item: 'Carrots' },
+      { amount: '2 tbsp', item: 'Fry Seasoning' },
+      { amount: '0.5 oz', item: 'Panko Breadcrumbs' },
+      { amount: '4 tbsp', item: 'Maple Syrup' },
+      { amount: '4 tbsp', item: 'Dijon Mustard' },
+      { amount: '20 oz', item: 'Chicken Cutlets' },
+      { amount: '4 tbsp', item: 'Butter' },
+    ],
+    steps: [
+      'Preheat oven to 425\u00b0F. Cut potatoes into wedges, slice carrots diagonally.',
+      'Combine melted butter with fry seasoning and panko for coating.',
+      'Mix maple syrup and Dijon mustard; reserve portion for chicken.',
+      'Season and arrange veggies on baking sheets.',
+      'Pat chicken dry, coat with maple mustard, press panko mixture on top.',
+      'Roast chicken and carrots on middle rack, potatoes on top rack, 15-18 min.',
+    ]
+  },
+  'Firecracker Meatballs': {
+    prepTime: 10, totalTime: 40, calories: 750,
+    ingredients: [
+      { amount: '12 oz', item: 'Green Beans' },
+      { amount: '4 tbsp', item: 'Sour Cream' },
+      { amount: '1 cup', item: 'Jasmine Rice' },
+      { amount: '4 tbsp', item: 'Soy Sauce' },
+      { amount: '2 tsp', item: 'Korean Chili Flakes' },
+      { amount: '4 tsp', item: 'Honey' },
+      { amount: '2 tbsp', item: 'Sesame Seeds' },
+      { amount: '4 tbsp', item: 'Mayonnaise' },
+      { amount: '20 oz', item: 'Ground Beef' },
+      { amount: '0.5 cup', item: 'Panko Breadcrumbs' },
+      { amount: '4', item: 'Scallions' },
+      { amount: '2 tsp', item: 'Sriracha' },
+      { amount: '2 thumbs', item: 'Ginger' },
+    ],
+    steps: [
+      'Preheat oven to 425\u00b0F. Slice scallions, mince ginger.',
+      'Make firecracker sauce: combine mayo, sour cream, honey, soy sauce, and sriracha.',
+      'Toast sesame seeds. Cook rice covered 15-18 min.',
+      'Mix ground beef, panko, ginger, scallion whites, soy sauce; form meatballs.',
+      'Place meatballs and green beans on oiled baking sheet. Roast 14-16 min.',
+      'Toss meatballs in firecracker sauce. Serve over rice with green beans.',
+    ]
+  },
+  'Garlic Butter Shrimp Scampi': {
+    prepTime: 10, totalTime: 30, calories: 750,
+    ingredients: [
+      { amount: '2', item: 'Seafood Stock Concentrate' },
+      { amount: '2', item: 'Lemon' },
+      { amount: '20 oz', item: 'Shrimp' },
+      { amount: '4 cloves', item: 'Garlic' },
+      { amount: '12 oz', item: 'Linguine Pasta' },
+      { amount: '6 tbsp', item: 'Parmesan Cheese' },
+      { amount: '2 heads', item: 'Broccoli' },
+      { amount: '2 tsp', item: 'Chili Flakes' },
+      { amount: '6 tbsp', item: 'Butter' },
+    ],
+    steps: [
+      'Preheat oven to 450\u00b0F. Cut broccoli, zest and quarter lemon, mince garlic.',
+      'Toss broccoli with olive oil; roast 12-15 min until browned.',
+      'Cook linguine until al dente 9-11 min. Reserve pasta water, then drain.',
+      'Make garlic butter: soften butter, mix with lemon zest, parmesan, garlic, chili flakes.',
+      'Cook shrimp in oiled pan 2-4 min until opaque.',
+      'Combine shrimp, linguine, broccoli, stock, and garlic butter. Toss with pasta water.',
+    ]
+  },
+  'Sweet As Honey Chicken': {
+    prepTime: 10, totalTime: 30, calories: 570,
+    ingredients: [
+      { amount: '4 cloves', item: 'Garlic' },
+      { amount: '1', item: 'Lime' },
+      { amount: '2 thumbs', item: 'Ginger' },
+      { amount: '1 cup', item: 'Jasmine Rice' },
+      { amount: '24 oz', item: 'Chicken Breasts' },
+      { amount: '10 tsp', item: 'White Wine Vinegar' },
+      { amount: '1', item: 'Chicken Stock Concentrate' },
+      { amount: '8 tsp', item: 'Honey' },
+      { amount: '4 tbsp', item: 'Soy Sauce' },
+      { amount: '12 oz', item: 'Green Beans' },
+      { amount: '2 tbsp', item: 'Butter' },
+    ],
+    steps: [
+      'Boil salted water for rice. Mince garlic and ginger, juice lime.',
+      'Cook rice covered on low 15-18 min. Season chicken with salt and pepper.',
+      'Cook chicken in oiled pan until browned, 4-5 min per side.',
+      'Saute garlic and ginger until fragrant, deglaze with vinegar.',
+      'Add stock, honey, soy sauce, and water; simmer until glaze thickens.',
+      'Microwave green beans, toss with butter and lime juice. Serve chicken over rice.',
+    ]
+  },
+  'Teriyaki Chicken Tenders': {
+    prepTime: 10, totalTime: 35, calories: 640,
+    ingredients: [
+      { amount: '1 thumb', item: 'Ginger' },
+      { amount: '4 cloves', item: 'Garlic' },
+      { amount: '2', item: 'Scallions' },
+      { amount: '1', item: 'Lime' },
+      { amount: '1.5 cups', item: 'Jasmine Rice' },
+      { amount: '12 oz', item: 'Green Beans' },
+      { amount: '2 tsp', item: 'Sesame Oil' },
+      { amount: '1 tbsp', item: 'Sesame Seeds' },
+      { amount: '24 oz', item: 'Chicken Tenders' },
+      { amount: '6 tbsp', item: 'Soy Sauce' },
+      { amount: '2 tbsp', item: 'White Wine Vinegar' },
+      { amount: '1 tsp', item: 'Cornstarch' },
+      { amount: '0.25 cup', item: 'Sugar' },
+    ],
+    steps: [
+      'Mince ginger and garlic, slice scallions. Preheat oven to 425\u00b0F.',
+      'Cook rice covered on low heat 15-20 min.',
+      'Roast seasoned green beans 10-12 min; toss with sesame oil and seeds.',
+      'Brown chicken tenders in oiled pan 2-4 min per side.',
+      'Cook scallion whites, garlic, ginger; whisk in soy sauce, sugar, vinegar, cornstarch; simmer.',
+      'Return chicken to pan, toss in teriyaki glaze. Serve over rice with green beans.',
+    ]
+  },
+};
+
 // Check if a meal name matches a PDF recipe
 const ALL_PDF_NAMES = new Set(
   [...PDF_RECIPES, ...SPECIAL_RECIPES].map(r => r.name.toLowerCase())
@@ -1278,8 +1515,9 @@ const RECIPE_REGISTRY = [
     path: r.path,
     protein: guessProtein(r.name),
     mealType: 'kids',
-    cookTime: null,
-    emoji: r.emoji
+    cookTime: HF_RECIPE_DATA[r.name] ? HF_RECIPE_DATA[r.name].totalTime : null,
+    emoji: r.emoji,
+    hasData: !!HF_RECIPE_DATA[r.name]
   })),
   ...SPECIAL_RECIPES.map(r => ({
     id: 'special-' + slugify(r.name),
@@ -1442,7 +1680,17 @@ function generateShoppingList() {
       }
     } else {
       const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      hfMeals.push({ day: dayNames[date.getDay()], name: recipe.name, path: recipe.path });
+      const hfData = HF_RECIPE_DATA[recipe.name];
+      hfMeals.push({ day: dayNames[date.getDay()], name: recipe.name, path: recipe.path, hasData: !!hfData });
+      // If structured HF data exists, add ingredients to dinner ingredients
+      if (hfData) {
+        hfData.ingredients.forEach(ing => {
+          const key = ing.item;
+          if (!inlineIngredients[key]) {
+            inlineIngredients[key] = { amount: ing.amount, item: ing.item };
+          }
+        });
+      }
     }
   }
 
@@ -2027,10 +2275,33 @@ async function renderShopping() {
     </div>
   `).join('');
 
-  if (hfMeals.length > 0) {
+  // Split HF meals: ones with structured data vs PDF-only
+  const hfWithData = hfMeals.filter(m => m.hasData);
+  const hfPdfOnly = hfMeals.filter(m => !m.hasData);
+
+  if (hfWithData.length > 0) {
     html += `<div class="shopping-cat">
       <div class="shopping-cat-title">HelloFresh Meals</div>
-      ${hfMeals.map(m => `
+      ${hfWithData.map(m => {
+        const hfData = HF_RECIPE_DATA[m.name];
+        return `<div style="margin-bottom:12px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:4px">${m.name} (${m.day})</div>
+          ${hfData.ingredients.map(ing => {
+            const itemKey = ing.amount + ' ' + ing.item;
+            return `<div class="shopping-item ${checkedItems[itemKey] ? 'checked' : ''}" onclick="toggleCheck(this, '${itemKey.replace(/'/g,"\\'")}')">
+              <div class="shop-check"></div>
+              <span class="shop-text">${itemKey}</span>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  if (hfPdfOnly.length > 0) {
+    html += `<div class="shopping-cat">
+      <div class="shopping-cat-title">HelloFresh Meals (PDF)</div>
+      ${hfPdfOnly.map(m => `
         <div style="margin-bottom:12px">
           <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:4px">${m.name} (${m.day})</div>
           <div class="hf-ingredients" data-ing-path="${m.path}">
@@ -2043,11 +2314,13 @@ async function renderShopping() {
 
   container.innerHTML = html;
 
-  // Lazy load HF ingredients
-  if (window.pdfjsLib && hfMeals.length > 0) {
-    loadHfIngredients(checkedItems);
-  } else if (hfMeals.length > 0) {
-    setTimeout(() => loadHfIngredients(checkedItems), 2000);
+  // Lazy load HF ingredients only for PDF-only meals
+  if (hfPdfOnly.length > 0) {
+    if (window.pdfjsLib) {
+      loadHfIngredients(checkedItems);
+    } else {
+      setTimeout(() => loadHfIngredients(checkedItems), 2000);
+    }
   }
 }
 
@@ -2090,39 +2363,77 @@ async function clearChecked() {
 async function openPdfRecipe(path, name) {
   const reg = RECIPE_REGISTRY.find(r => r.name === name);
   const recipeId = reg ? reg.id : 'pdf-' + slugify(name);
+  const hfData = HF_RECIPE_DATA[name];
 
   document.getElementById('modal-title').textContent = name;
   document.getElementById('modal-content').classList.remove('pdf-modal');
 
-  let ingredientsHtml = '<p style="color:var(--muted);font-size:13px">Loading ingredients...</p>';
+  if (hfData) {
+    // Structured data available - render like inline recipes
+    document.getElementById('modal-body').innerHTML = `
+      <div id="rating-${recipeId}">${renderStarRating(recipeId)}</div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;font-size:13px;color:var(--muted)">
+        <span>${hfData.totalTime} min</span>
+        <span>${hfData.calories} cal</span>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Ingredients</div>
+        ${hfData.ingredients.map(ing => `
+          <div class="modal-ingredient">
+            <span class="ing-amount">${ing.amount}</span>
+            <span>${ing.item}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Instructions</div>
+        ${hfData.steps.map((step, i) => `
+          <div class="modal-step">
+            <span class="step-num">${i+1}</span>
+            <span>${step}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div class="modal-section" style="text-align:center">
+        <a href="${encodeURI(path)}" target="_blank" class="view-recipe-btn" style="display:inline-block;text-align:center;background:none;border:2px solid var(--accent);color:var(--accent)">
+          Open Recipe Card
+        </a>
+      </div>
+    `;
+  } else {
+    // No structured data - fall back to PDF extraction
+    let ingredientsHtml = '<p style="color:var(--muted);font-size:13px">Loading ingredients...</p>';
 
-  document.getElementById('modal-body').innerHTML = `
-    <div id="rating-${recipeId}">${renderStarRating(recipeId)}</div>
-    <div class="modal-section">
-      <div class="modal-section-label">Ingredients</div>
-      <div id="pdf-ingredients">${ingredientsHtml}</div>
-    </div>
-    <div class="modal-section">
-      <div class="modal-section-label">Instructions</div>
-      <a href="${encodeURI(path)}" target="_blank" class="view-recipe-btn" style="display:inline-block;text-align:center;background:none;border:2px solid var(--accent);color:var(--accent)">
-        Open Recipe Card
-      </a>
-    </div>
-  `;
+    document.getElementById('modal-body').innerHTML = `
+      <div id="rating-${recipeId}">${renderStarRating(recipeId)}</div>
+      <div class="modal-section">
+        <div class="modal-section-label">Ingredients</div>
+        <div id="pdf-ingredients">${ingredientsHtml}</div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Instructions</div>
+        <a href="${encodeURI(path)}" target="_blank" class="view-recipe-btn" style="display:inline-block;text-align:center;background:none;border:2px solid var(--accent);color:var(--accent)">
+          Open Recipe Card
+        </a>
+      </div>
+    `;
+  }
 
   history.pushState({ modal: true, page: getCurrentPage() }, '');
   document.getElementById('modal-overlay').classList.add('open');
 
-  // Load ingredients async
-  const ingredients = await extractPdfIngredients(path);
-  const el = document.getElementById('pdf-ingredients');
-  if (el) {
-    if (ingredients.length > 0) {
-      el.innerHTML = ingredients.map(function(ing) {
-        return '<div class="modal-ingredient"><span>' + ing + '</span></div>';
-      }).join('');
-    } else {
-      el.innerHTML = '<p style="color:var(--muted);font-size:13px">See recipe card for ingredients</p>';
+  if (!hfData) {
+    // Load ingredients async for PDF-only recipes
+    const ingredients = await extractPdfIngredients(path);
+    const el = document.getElementById('pdf-ingredients');
+    if (el) {
+      if (ingredients.length > 0) {
+        el.innerHTML = ingredients.map(function(ing) {
+          return '<div class="modal-ingredient"><span>' + ing + '</span></div>';
+        }).join('');
+      } else {
+        el.innerHTML = '<p style="color:var(--muted);font-size:13px">See recipe card for ingredients</p>';
+      }
     }
   }
 }
@@ -2237,12 +2548,34 @@ function renderShoppingFallback() {
     </div>
   `).join('');
   if (hfMeals.length > 0) {
-    html += `<div class="shopping-cat">
-      <div class="shopping-cat-title">HelloFresh Meals</div>
-      ${hfMeals.map(m => `
-        <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:8px">${m.name} (${m.day})</div>
-      `).join('')}
-    </div>`;
+    const hfWithData = hfMeals.filter(m => m.hasData);
+    const hfPdfOnly = hfMeals.filter(m => !m.hasData);
+    if (hfWithData.length > 0) {
+      html += `<div class="shopping-cat">
+        <div class="shopping-cat-title">HelloFresh Meals</div>
+        ${hfWithData.map(m => {
+          const hfData = HF_RECIPE_DATA[m.name];
+          return `<div style="margin-bottom:12px">
+            <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:4px">${m.name} (${m.day})</div>
+            ${hfData.ingredients.map(ing => {
+              const itemKey = ing.amount + ' ' + ing.item;
+              return `<div class="shopping-item ${saved[itemKey] ? 'checked' : ''}" onclick="toggleCheck(this, '${itemKey.replace(/'/g,"\\'")}')">
+                <div class="shop-check"></div>
+                <span class="shop-text">${itemKey}</span>
+              </div>`;
+            }).join('')}
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+    if (hfPdfOnly.length > 0) {
+      html += `<div class="shopping-cat">
+        <div class="shopping-cat-title">HelloFresh Meals (PDF)</div>
+        ${hfPdfOnly.map(m => `
+          <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:8px">${m.name} (${m.day})</div>
+        `).join('')}
+      </div>`;
+    }
   }
   container.innerHTML = html;
 }
