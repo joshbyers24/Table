@@ -379,6 +379,8 @@ cursor: pointer;
 transition: border-color 0.15s, transform 0.15s;
 box-shadow: var(--shadow);
 position: relative;
+display: flex;
+flex-direction: column;
 }
 
 .meal-card:hover {
@@ -528,7 +530,8 @@ font-size: 40px;
 }
 
 .bento-grid > .meal-card:nth-child(3) .meal-card-thumb {
-  height: 100%;
+  flex: 1;
+  height: auto;
   min-height: 280px;
 }
 
