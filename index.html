@@ -1860,10 +1860,15 @@ function isRecipeHellofresh(recipeId) {
   if (rating && rating.is_hellofresh !== undefined && rating.is_hellofresh !== null) {
     return rating.is_hellofresh;
   }
-  // Default: PDF_RECIPES and SPECIAL_RECIPES are HF, inline MEALS are not
   const reg = RECIPE_REGISTRY.find(r => r.id === recipeId);
   if (!reg) return false;
-  return reg.source === 'pdf';
+  // PDF source = HF
+  if (reg.source === 'pdf') return true;
+  // Edited HF recipes become custom but should still be HF if name matches HF data
+  if (HF_RECIPE_DATA && HF_RECIPE_DATA[reg.name]) return true;
+  // Recipe ID matches the pdf-{slug} or special-{slug} pattern from PDF_RECIPES
+  if (recipeId.indexOf('pdf-') === 0 || recipeId.indexOf('special-') === 0) return true;
+  return false;
 }
 
 // ============================================================
@@ -3414,16 +3419,49 @@ function generateShoppingList() {
   const inlineIngredients = {};
   const hfMeals = [];
 
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   for (let i = 0; i < 7; i++) {
     const date = new Date(sunday);
     date.setDate(sunday.getDate() + i);
     const recipe = getDinnerForDate(date);
     if (!recipe) continue;
 
+    // Treat as HelloFresh if marked HF (regardless of custom override)
+    const isHF = isRecipeHellofresh(recipe.id);
+    if (isHF) {
+      const hfData = HF_RECIPE_DATA[recipe.name];
+      // Get ingredients - prefer custom override, fall back to HF data
+      let ingredients = null;
+      if (recipe.source === 'custom') {
+        const customData = recipe._customData || customRecipes.find(r => r.id === recipe.id);
+        if (customData && customData.ingredients && customData.ingredients.length > 0) {
+          ingredients = customData.ingredients;
+        }
+      }
+      if (!ingredients && hfData) ingredients = hfData.ingredients;
+
+      // Find a PDF path - either from registry or by matching name to PDF_RECIPES/SPECIAL_RECIPES
+      let pdfPath = recipe.path;
+      if (!pdfPath) {
+        const pdfMatch = [...PDF_RECIPES, ...SPECIAL_RECIPES].find(p => p.name === recipe.name);
+        if (pdfMatch) pdfPath = pdfMatch.path;
+      }
+
+      hfMeals.push({
+        day: dayNames[date.getDay()],
+        name: recipe.name,
+        path: pdfPath,
+        hasData: !!ingredients,
+        ingredients: ingredients
+      });
+      continue;
+    }
+
+    // Not HF: collect into dinner ingredients
     if (recipe.source === 'custom') {
-      const customData = recipe._customData || customRecipes.find(function(r) { return r.id === recipe.id; });
+      const customData = recipe._customData || customRecipes.find(r => r.id === recipe.id);
       if (customData && customData.ingredients) {
-        customData.ingredients.forEach(function(ing) {
+        customData.ingredients.forEach(ing => {
           const key = ing.item;
           if (!inlineIngredients[key]) {
             inlineIngredients[key] = { amount: ing.amount, item: ing.item };
@@ -3440,16 +3478,6 @@ function generateShoppingList() {
           }
         });
       }
-    } else {
-      const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      const hfData = HF_RECIPE_DATA[recipe.name];
-      hfMeals.push({
-        day: dayNames[date.getDay()],
-        name: recipe.name,
-        path: recipe.path,
-        hasData: !!hfData,
-        ingredients: hfData ? hfData.ingredients : null
-      });
     }
   }
 
@@ -4224,11 +4252,10 @@ async function renderShopping() {
     html += `<div class="shopping-cat">
       <div class="shopping-cat-title">HelloFresh Meals</div>
       ${hfWithData.map(m => {
-        const hfData = HF_RECIPE_DATA[m.name];
         return `<div style="margin-bottom:12px">
           <div style="font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;margin-top:12px">${m.name} (${m.day})</div>
-          ${hfData.ingredients.map(ing => {
-            const itemKey = ing.amount + ' ' + ing.item;
+          ${m.ingredients.map(ing => {
+            const itemKey = (ing.amount ? ing.amount + ' ' : '') + ing.item;
             return `<div class="shopping-item ${checkedItems[itemKey] ? 'checked' : ''}" onclick="toggleCheck(this, '${itemKey.replace(/'/g,"\\'")}')">
               <div class="shop-check"></div>
               <span class="shop-text">${itemKey}</span>
