@@ -1536,14 +1536,20 @@ nav { padding: 12px 16px; }
   line-height: 1;
 }
 
+.editor-field .hf-toggle input[type="checkbox"],
 .hf-toggle input[type="checkbox"] {
   accent-color: var(--accent);
   width: 11px;
   height: 11px;
+  min-width: 11px;
   margin: 0;
   padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
   flex-shrink: 0;
-  display: block;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .hf-toggle span {
