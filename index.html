@@ -1045,6 +1045,46 @@ nav { padding: 12px 16px; }
   margin-left: 6px;
   vertical-align: middle;
 }
+
+/* HF TOGGLE */
+.hf-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  margin-left: 12px;
+}
+
+.hf-toggle input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+/* RECIPE IMAGE PREVIEW IN EDITOR */
+.editor-image-preview {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface2);
+}
+
+.meal-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.meal-card-thumb .placeholder-img {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  background: linear-gradient(135deg, #e8f5e0, #c5e1a5);
+}
 </style>
 
 </head>
@@ -1185,13 +1225,123 @@ async function loadRatings() {
   if (data) data.forEach(r => ratingsCache[r.recipe_id] = r);
 }
 
-async function saveRating(recipeId, stars, isFavorite = false, isDeleted = false, mealType = null) {
+async function saveRating(recipeId, stars, isFavorite = false, isDeleted = false, mealType = null, isHellofresh = null) {
   const entry = { recipe_id: recipeId, stars, is_favorite: isFavorite, is_deleted: isDeleted };
   if (mealType) entry.meal_type = mealType;
+  if (isHellofresh !== null) entry.is_hellofresh = isHellofresh;
   ratingsCache[recipeId] = entry;
   const row = { recipe_id: recipeId, stars, is_favorite: isFavorite, is_deleted: isDeleted, updated_at: new Date().toISOString() };
   if (mealType) row.meal_type = mealType;
+  if (isHellofresh !== null) row.is_hellofresh = isHellofresh;
   await sb.from('ratings').upsert(row);
+}
+
+// ============================================================
+// RECIPE IMAGES
+// ============================================================
+
+let recipeImageCache = {};
+
+async function loadRecipeImages() {
+  try {
+    const { data } = await sb.from('recipe_images').select('*');
+    if (data) data.forEach(r => recipeImageCache[r.recipe_id] = r.image_data);
+  } catch(e) { console.warn('Image load failed:', e); }
+}
+
+async function extractRecipeImage(path) {
+  if (!window.pdfjsLib) return null;
+  const cacheKey = 'img:' + path;
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached) return cached;
+  try {
+    const pdf = await window.pdfjsLib.getDocument(encodeURI(path)).promise;
+    const page = await pdf.getPage(1);
+    const scale = 0.6;
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    // Crop to top 40% for food photo
+    const cropHeight = Math.floor(viewport.height * 0.4);
+    canvas.height = cropHeight;
+    const ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+    try { sessionStorage.setItem(cacheKey, dataUrl); } catch(e) {}
+    return dataUrl;
+  } catch(e) { return null; }
+}
+
+function generatePlaceholderImage(emoji) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 300;
+  canvas.height = 180;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 300, 180);
+  gradient.addColorStop(0, '#e8f5e0');
+  gradient.addColorStop(1, '#c5e1a5');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 300, 180);
+  ctx.font = '64px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(emoji || '🍽️', 150, 90);
+  return canvas.toDataURL('image/jpeg', 0.7);
+}
+
+function getRecipeImage(recipeId, pdfPath) {
+  // 1. Check uploaded images from Supabase
+  if (recipeImageCache[recipeId]) return recipeImageCache[recipeId];
+  // 2. Check sessionStorage for extracted image
+  if (pdfPath) {
+    const cached = sessionStorage.getItem('img:' + pdfPath);
+    if (cached) return cached;
+  }
+  // 3. Check sessionStorage thumbnail cache (fallback)
+  if (pdfPath) {
+    const cached = sessionStorage.getItem('thumb:' + pdfPath);
+    if (cached) return cached;
+  }
+  // 4. Return null (will show placeholder)
+  return null;
+}
+
+async function saveRecipeImage(recipeId, imageData) {
+  recipeImageCache[recipeId] = imageData;
+  try {
+    await sb.from('recipe_images').upsert({
+      recipe_id: recipeId,
+      image_data: imageData,
+      updated_at: new Date().toISOString()
+    });
+  } catch(e) { console.warn('Image save failed:', e); }
+}
+
+function previewEditorImage(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.getElementById('editor-image-img');
+    if (img) {
+      img.src = e.target.result;
+      img.style.display = '';
+      img.dataset.newImage = e.target.result;
+    }
+    const placeholder = document.getElementById('editor-image-placeholder');
+    if (placeholder) placeholder.style.display = 'none';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function isRecipeHellofresh(recipeId) {
+  const rating = ratingsCache[recipeId];
+  if (rating && rating.is_hellofresh !== undefined && rating.is_hellofresh !== null) {
+    return rating.is_hellofresh;
+  }
+  // Default: PDF_RECIPES and SPECIAL_RECIPES are HF, inline MEALS are not
+  const reg = RECIPE_REGISTRY.find(r => r.id === recipeId);
+  if (!reg) return false;
+  return reg.source === 'pdf';
 }
 
 // ============================================================
@@ -3032,37 +3182,52 @@ function initThumbnails() {
       if (!entry.isIntersecting) return;
       const el = entry.target;
       const path = el.dataset.pdfPath;
+      const rid = el.dataset.recipeId;
       if (!path || el.dataset.loaded) return;
       el.dataset.loaded = 'true';
       observer.unobserve(el);
       try {
+        // Check uploaded image first
+        if (rid && recipeImageCache[rid]) {
+          el.innerHTML = '<img src="' + recipeImageCache[rid] + '" style="width:100%;height:100%;object-fit:cover">';
+          return;
+        }
+        // Check extracted image cache
+        const imgCached = sessionStorage.getItem('img:' + path);
+        if (imgCached) {
+          el.innerHTML = '<img src="' + imgCached + '" style="width:100%;height:100%;object-fit:cover">';
+          return;
+        }
+        // Check old thumb cache as fallback
         const cached = sessionStorage.getItem('thumb:' + path);
         if (cached) {
           el.innerHTML = '<img src="' + cached + '" style="width:100%;height:100%;object-fit:cover">';
           return;
         }
+        // Extract at higher quality, crop to food photo (top 40%)
         const pdf = await window.pdfjsLib.getDocument(encodeURI(path)).promise;
         const page = await pdf.getPage(1);
-        const scale = 0.3;
+        const scale = 0.6;
         const viewport = page.getViewport({ scale });
         const canvas = document.createElement('canvas');
         canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        const cropHeight = Math.floor(viewport.height * 0.4);
+        canvas.height = cropHeight;
         const ctx = canvas.getContext('2d');
         await page.render({ canvasContext: ctx, viewport }).promise;
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.4);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
         try {
-          sessionStorage.setItem('thumb:' + path, dataUrl);
+          sessionStorage.setItem('img:' + path, dataUrl);
         } catch(e) {
-          // sessionStorage full — clear old thumbs and retry once
+          // sessionStorage full — clear old entries and retry
           try {
             const keysToRemove = [];
             for (let k = 0; k < sessionStorage.length; k++) {
               const key = sessionStorage.key(k);
-              if (key && key.startsWith('thumb:')) keysToRemove.push(key);
+              if (key && (key.startsWith('thumb:') || key.startsWith('img:'))) keysToRemove.push(key);
             }
             keysToRemove.forEach(k => sessionStorage.removeItem(k));
-            sessionStorage.setItem('thumb:' + path, dataUrl);
+            sessionStorage.setItem('img:' + path, dataUrl);
           } catch(e2) { /* give up caching */ }
         }
         el.innerHTML = '<img src="' + dataUrl + '" style="width:100%;height:100%;object-fit:cover">';
@@ -3167,10 +3332,16 @@ function renderStarRating(recipeId) {
 
   const starSvg = (i) => `<svg viewBox="0 0 24 24" class="star ${i <= stars ? 'filled' : ''}" onclick="event.stopPropagation(); setStarRating('${recipeId}', ${i})"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`;
 
+  const isHF = isRecipeHellofresh(recipeId);
+
   return `
     <div class="rating-section">
       <div class="star-rating">${[1,2,3,4,5].map(i => starSvg(i)).join('')}</div>
       ${renderMealTypeToggle(recipeId)}
+      <label class="hf-toggle">
+        <input type="checkbox" ${isHF ? 'checked' : ''} onchange="event.stopPropagation(); toggleHellofresh('${recipeId}', this.checked)">
+        <span>HelloFresh</span>
+      </label>
       <button class="btn-favorite ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('${recipeId}')">${isFav ? '★ Favorite' : '☆ Favorite'}</button>
     </div>
     <div style="margin-top:4px">
@@ -3207,6 +3378,12 @@ async function toggleDeleted(recipeId) {
   await saveRating(recipeId, existing.stars || 0, existing.is_favorite || false, newDel);
   refreshRatingUI(recipeId);
   renderMeals();
+}
+
+async function toggleHellofresh(recipeId, checked) {
+  const existing = ratingsCache[recipeId] || {};
+  await saveRating(recipeId, existing.stars || 0, existing.is_favorite || false, existing.is_deleted || false, existing.meal_type || null, checked);
+  refreshRatingUI(recipeId);
 }
 
 function refreshRatingUI(recipeId) {
@@ -3317,15 +3494,22 @@ function renderMeals() {
     } else {
       clickHandler = `openPdfRecipe('${r.path.replace(/'/g,"\\'")}', '${r.name.replace(/'/g,"\\'")}')`;
     }
-    const thumbContent = r.source === 'pdf'
-      ? `<div class="meal-card-thumb" data-pdf-path="${r.path}"></div>`
-      : `<div class="meal-card-thumb" style="background:var(--accent-light)"></div>`;
+    const existingImage = getRecipeImage(r.id, r.path);
+    let thumbContent;
+    if (existingImage) {
+      thumbContent = `<div class="meal-card-thumb"><img src="${existingImage}" style="width:100%;height:100%;object-fit:cover"></div>`;
+    } else if (r.source === 'pdf') {
+      thumbContent = `<div class="meal-card-thumb" data-pdf-path="${r.path}" data-recipe-id="${r.id}"></div>`;
+    } else {
+      thumbContent = `<div class="meal-card-thumb"><div class="placeholder-img">${r.emoji || '🍽️'}</div></div>`;
+    }
     const metaParts = [];
     if (r.cookTime) metaParts.push(r.cookTime);
     const miniStars = renderMiniStars(r.id);
     if (miniStars) metaParts.push(miniStars);
+    const isHF = isRecipeHellofresh(r.id);
     let badge = '';
-    if (r.source === 'pdf') badge = `<span class="hf-badge">${r.category === 'special' ? 'Special' : 'HF'}</span>`;
+    if (isHF) badge = `<span class="hf-badge">${r.category === 'special' ? 'Special' : 'HF'}</span>`;
     else if (r.source === 'custom') badge = '<span class="custom-badge">Custom</span>';
     return `
       <div class="meal-card" onclick="${clickHandler}">
@@ -3465,6 +3649,7 @@ async function openPdfRecipe(path, name) {
   const reg = RECIPE_REGISTRY.find(r => r.name === name);
   const recipeId = reg ? reg.id : 'pdf-' + slugify(name);
   const hfData = HF_RECIPE_DATA[name];
+  const isHF = isRecipeHellofresh(recipeId);
   currentModalRecipeId = recipeId;
 
   document.getElementById('modal-title').textContent = name;
@@ -3472,9 +3657,21 @@ async function openPdfRecipe(path, name) {
   document.getElementById('modal-edit-btn').style.display = '';
   document.getElementById('modal-content').classList.remove('pdf-modal');
 
+  const pdfButton = isHF && path ? `
+      <div class="modal-section" style="text-align:center">
+        <a href="${encodeURI(path)}" target="_blank" class="view-recipe-btn" style="display:inline-block;text-align:center;background:none;border:2px solid var(--accent);color:var(--accent)">
+          Open Recipe Card
+        </a>
+      </div>` : '';
+
+  // Show featured image at top if available
+  const recipeImg = getRecipeImage(recipeId, path);
+  const imageHtml = recipeImg ? `<div style="margin-bottom:16px;border-radius:8px;overflow:hidden"><img src="${recipeImg}" style="width:100%;height:200px;object-fit:cover"></div>` : '';
+
   if (hfData) {
     // Structured data available - render like inline recipes
     document.getElementById('modal-body').innerHTML = `
+      ${imageHtml}
       <div id="rating-${recipeId}">${renderStarRating(recipeId)}</div>
       <div style="display:flex;gap:12px;margin-bottom:12px;font-size:13px;color:var(--muted)">
         <span>${hfData.totalTime} min</span>
@@ -3498,17 +3695,14 @@ async function openPdfRecipe(path, name) {
           </div>
         `).join('')}
       </div>
-      <div class="modal-section" style="text-align:center">
-        <a href="${encodeURI(path)}" target="_blank" class="view-recipe-btn" style="display:inline-block;text-align:center;background:none;border:2px solid var(--accent);color:var(--accent)">
-          Open Recipe Card
-        </a>
-      </div>
+      ${pdfButton}
     `;
   } else {
     // No structured data - fall back to PDF extraction
     let ingredientsHtml = '<p style="color:var(--muted);font-size:13px">Loading ingredients...</p>';
 
     document.getElementById('modal-body').innerHTML = `
+      ${imageHtml}
       <div id="rating-${recipeId}">${renderStarRating(recipeId)}</div>
       <div class="modal-section">
         <div class="modal-section-label">Ingredients</div>
@@ -3516,9 +3710,9 @@ async function openPdfRecipe(path, name) {
       </div>
       <div class="modal-section">
         <div class="modal-section-label">Instructions</div>
-        <a href="${encodeURI(path)}" target="_blank" class="view-recipe-btn" style="display:inline-block;text-align:center;background:none;border:2px solid var(--accent);color:var(--accent)">
+        ${isHF && path ? `<a href="${encodeURI(path)}" target="_blank" class="view-recipe-btn" style="display:inline-block;text-align:center;background:none;border:2px solid var(--accent);color:var(--accent)">
           Open Recipe Card
-        </a>
+        </a>` : '<p style="color:var(--muted);font-size:13px">No recipe card available</p>'}
       </div>
     `;
   }
@@ -3550,7 +3744,10 @@ function openRecipe(id) {
   document.getElementById('modal-title').textContent = meal.name;
   document.getElementById('modal-eyebrow-text').textContent = 'Recipe';
   document.getElementById('modal-edit-btn').style.display = '';
+  const inlineImg = getRecipeImage(recipeId);
+  const inlineImageHtml = inlineImg ? `<div style="margin-bottom:16px;border-radius:8px;overflow:hidden"><img src="${inlineImg}" style="width:100%;height:200px;object-fit:cover"></div>` : '';
   document.getElementById('modal-body').innerHTML = `
+    ${inlineImageHtml}
     <div id="rating-${recipeId}">${renderStarRating(recipeId)}</div>
     <div class="modal-section">
       <div class="modal-section-label">Ingredients</div>
@@ -3591,7 +3788,11 @@ function openCustomRecipe(recipeId) {
   var ingredients = custom.ingredients || [];
   var steps = custom.steps || [];
 
+  var customImg = getRecipeImage(recipeId);
+  var customImageHtml = customImg ? '<div style="margin-bottom:16px;border-radius:8px;overflow:hidden"><img src="' + customImg + '" style="width:100%;height:200px;object-fit:cover"></div>' : '';
+
   document.getElementById('modal-body').innerHTML =
+    customImageHtml +
     '<div id="rating-' + recipeId + '">' + renderStarRating(recipeId) + '</div>' +
     (metaParts.length > 0 ? '<div style="display:flex;gap:12px;margin-bottom:12px;font-size:13px;color:var(--muted)">' + metaParts.map(function(p) { return '<span>' + p + '</span>'; }).join('') + '</div>' : '') +
     '<div class="modal-section">' +
@@ -3740,7 +3941,20 @@ function renderRecipeEditor(data) {
       '</div>';
   }).join('');
 
+  var currentImage = editorRecipeId ? getRecipeImage(editorRecipeId) : null;
+  var imagePreviewSrc = currentImage || '';
+
   document.getElementById('modal-body').innerHTML = '<div class="recipe-editor">' +
+    '<div class="editor-field"><label>Featured Image</label>' +
+      '<div class="editor-image-preview">' +
+        '<img id="editor-image-img" src="' + imagePreviewSrc + '" style="width:100%;height:200px;object-fit:cover;border-radius:8px;' + (imagePreviewSrc ? '' : 'display:none') + '">' +
+        (imagePreviewSrc ? '' : '<div id="editor-image-placeholder" style="width:100%;height:200px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border-radius:8px;color:var(--muted);font-size:13px">No image</div>') +
+      '</div>' +
+      '<div style="margin-top:8px">' +
+        '<input type="file" id="editor-image-input" accept="image/*" onchange="previewEditorImage(this)" style="display:none">' +
+        '<button class="btn-small" onclick="document.getElementById(\'editor-image-input\').click()" type="button">Change Image</button>' +
+      '</div>' +
+    '</div>' +
     '<div class="editor-field"><label>Recipe Name</label><input type="text" id="editor-name" value="' + (data.name || '').replace(/"/g, '&quot;') + '"></div>' +
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">' +
       '<div class="editor-field"><label>Prep Time (min)</label><input type="number" id="editor-prep" value="' + data.prepTime + '"></div>' +
@@ -3938,6 +4152,12 @@ async function saveRecipe() {
     RECIPE_REGISTRY.push(entry);
   }
 
+  // Save featured image if changed
+  var editorImg = document.getElementById('editor-image-img');
+  if (editorImg && editorImg.dataset.newImage) {
+    saveRecipeImage(id, editorImg.dataset.newImage);
+  }
+
   // Close modal and re-render
   document.getElementById('modal-overlay').classList.remove('open');
   if (history.state && history.state.modal) history.back();
@@ -3959,6 +4179,7 @@ function editCurrentRecipe() {
 
 (async function init() {
   try { await loadRatings(); } catch(e) { console.warn('Ratings load failed:', e); }
+  try { await loadRecipeImages(); } catch(e) { console.warn('Recipe images load failed:', e); }
   try { await loadCustomRecipes(); } catch(e) { console.warn('Custom recipes load failed:', e); }
   renderToday();
   renderWeek();
