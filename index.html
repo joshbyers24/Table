@@ -818,28 +818,67 @@ background: #ffffff;
 background: var(--surface);
 border: none;
 box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-border-radius: 12px;
-max-width: 680px;
+border-radius: 24px;
+max-width: 720px;
 width: 100%;
-max-height: 85vh;
+max-height: 90vh;
 overflow-y: auto;
-padding: 36px;
+padding: 0;
 position: relative;
+}
+
+#modal-header-img {
+  width: 100%;
+  height: 320px;
+  background: var(--surface2);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  overflow: hidden;
+}
+
+#modal-header-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+#modal-header-img:empty {
+  display: none;
+}
+
+.modal-inner {
+  padding: 28px 36px 32px;
 }
 
 .modal-close {
 position: absolute;
 top: 16px;
 right: 16px;
-background: none;
+background: rgba(0,0,0,0.5);
 border: none;
-color: var(--muted);
-font-size: 24px;
+color: white;
+font-size: 22px;
 cursor: pointer;
 line-height: 1;
+width: 36px;
+height: 36px;
+border-radius: 999px;
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 10;
 }
 
-.modal-close:hover { color: var(--white); }
+.modal-close:hover { background: rgba(0,0,0,0.7); }
+
+.modal-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
 
 .modal-eyebrow {
 font-size: 10px;
@@ -852,67 +891,178 @@ margin-bottom: 8px;
 
 .modal-title {
 font-family: 'DM Sans', sans-serif;
-font-size: 32px;
+font-size: 36px;
 font-weight: 800;
 letter-spacing: 0;
-color: var(--white);
-margin-bottom: 24px;
+color: var(--text);
+margin-bottom: 8px;
 line-height: 1.1;
 }
 
+.modal-subtitle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-meal-type {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.favorite-heart {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favorite-heart svg {
+  width: 32px;
+  height: 32px;
+  fill: var(--border);
+  transition: fill 0.15s;
+}
+
+.favorite-heart.active svg {
+  fill: var(--accent);
+}
+
+.favorite-heart:hover svg {
+  fill: var(--accent2);
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.modal-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 14px 24px;
+  border-radius: 999px;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+
+.modal-action-btn.primary {
+  background: var(--text);
+  color: white;
+  border-color: var(--text);
+}
+
+.modal-action-btn.primary:hover {
+  opacity: 0.85;
+}
+
+.modal-action-btn.outline {
+  background: none;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.modal-action-btn.outline:hover {
+  border-color: var(--text);
+}
+
 .modal-section {
-margin-bottom: 24px;
+margin-bottom: 28px;
 }
 
 .modal-section-label {
-font-size: 10px;
+font-family: 'DM Sans', sans-serif;
+font-size: 22px;
 font-weight: 700;
-letter-spacing: 3px;
-text-transform: uppercase;
-color: var(--muted);
-margin-bottom: 10px;
-padding-bottom: 6px;
+letter-spacing: 0;
+text-transform: none;
+color: var(--text);
+margin-bottom: 14px;
+padding-bottom: 10px;
 border-bottom: 1px solid var(--border);
+}
+
+.modal-ingredients-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 4px 24px;
 }
 
 .modal-ingredient {
 display: flex;
-gap: 10px;
-padding: 6px 0;
-font-size: 13px;
-color: var(--text);
-border-bottom: 1px solid var(--border);
+gap: 16px;
+padding: 8px 0;
+font-size: 15px;
+color: var(--mid);
+border-bottom: none;
+align-items: baseline;
 }
 
-.modal-ingredient:last-child { border-bottom: none; }
-
 .ing-amount {
-color: var(--accent);
-min-width: 80px;
-font-weight: 600;
+color: var(--text);
+min-width: 70px;
+font-weight: 700;
+font-family: 'DM Sans', sans-serif;
 }
 
 .modal-step {
-text-align: center;
-margin-bottom: 24px;
-font-size: 14px;
-color: var(--text);
-line-height: 1.6;
+display: flex;
+gap: 24px;
+align-items: flex-start;
+text-align: left;
+margin-bottom: 0;
+padding: 16px 0;
+border-bottom: 1px solid var(--border);
+font-size: 15px;
+color: var(--mid);
+line-height: 1.5;
+}
+
+.modal-step:last-child {
+border-bottom: none;
 }
 
 .step-num {
-font-family: 'Lilita One', sans-serif;
+font-family: 'DM Sans', sans-serif;
 font-size: 28px;
-color: var(--accent);
+font-weight: 800;
+color: var(--text);
 display: block;
-margin-bottom: 4px;
+margin-bottom: 0;
+flex-shrink: 0;
+min-width: 32px;
+line-height: 1;
 }
 
 .modal-step span:last-child {
 display: block;
-font-size: 14px;
-color: var(--text);
-line-height: 1.6;
+font-size: 15px;
+color: var(--mid);
+line-height: 1.5;
+flex: 1;
+}
+
+@media (max-width: 600px) {
+  .modal-ingredients-grid { grid-template-columns: 1fr; }
 }
 
 /* WEEK HEADER */
@@ -1477,10 +1627,27 @@ nav { padding: 12px 16px; }
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal" id="modal-content">
     <button class="modal-close" onclick="closeModal()">×</button>
-    <button class="modal-edit" id="modal-edit-btn" onclick="editCurrentRecipe()" style="display:none">Edit</button>
-    <div class="modal-eyebrow" id="modal-eyebrow-text">Recipe</div>
-    <div class="modal-title" id="modal-title">—</div>
-    <div id="modal-body"></div>
+    <div id="modal-header-img"></div>
+    <div class="modal-inner">
+      <div class="modal-eyebrow" id="modal-eyebrow-text" style="display:none">Recipe</div>
+      <div class="modal-title-row">
+        <div>
+          <div class="modal-title" id="modal-title">—</div>
+          <div class="modal-subtitle-row" id="modal-subtitle-row"></div>
+        </div>
+        <button class="favorite-heart" id="modal-favorite-heart" onclick="toggleModalFavorite()" style="display:none">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+      </div>
+      <div id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer" style="display:none">
+        <a id="modal-pdf-link" href="" target="_blank" class="modal-action-btn primary" style="display:none">View Recipe PDF</a>
+        <button id="modal-edit-btn-footer" onclick="editCurrentRecipe()" class="modal-action-btn outline" style="display:none">
+          <svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:6px"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          Edit Recipe
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3701,17 +3868,86 @@ async function extractPdfIngredients(path) {
 function renderStarRating(recipeId) {
   const rating = ratingsCache[recipeId] || {};
   const stars = rating.stars || 0;
-  const isFav = rating.is_favorite || false;
-
   const starSvg = (i) => `<svg viewBox="0 0 24 24" class="star ${i <= stars ? 'filled' : ''}" onclick="event.stopPropagation(); setStarRating('${recipeId}', ${i})"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`;
+  return `<div class="star-rating">${[1,2,3,4,5].map(i => starSvg(i)).join('')}</div>`;
+}
 
-  return `
-    <div class="rating-section">
-      <div class="star-rating">${[1,2,3,4,5].map(i => starSvg(i)).join('')}</div>
-      ${renderMealTypeToggle(recipeId)}
-      <button class="btn-favorite ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('${recipeId}')">${isFav ? '★ Favorite' : '☆ Favorite'}</button>
-    </div>
-  `;
+// Setup the modal header (image + title + subtitle + heart + footer buttons)
+function setupRecipeModal(recipeId, name, opts) {
+  opts = opts || {};
+  currentModalRecipeId = recipeId;
+
+  // Header image
+  const headerImg = document.getElementById('modal-header-img');
+  const imageUrl = opts.imageUrl || getRecipeImage(recipeId, opts.pdfPath);
+  if (imageUrl) {
+    headerImg.innerHTML = '<img src="' + imageUrl + '">';
+  } else {
+    headerImg.innerHTML = '';
+  }
+
+  // Title
+  document.getElementById('modal-title').textContent = name;
+  document.getElementById('modal-eyebrow-text').style.display = 'none';
+
+  // Subtitle: meal type + stars
+  const rating = ratingsCache[recipeId] || {};
+  const reg = RECIPE_REGISTRY.find(r => r.id === recipeId);
+  const mealType = (rating.meal_type) || (reg && reg.mealType) || 'both';
+  let mealTypeLabel = '';
+  if (mealType === 'kids') mealTypeLabel = 'Family Meal';
+  else if (mealType === 'solo') mealTypeLabel = 'Solo Meal';
+  else mealTypeLabel = 'Family Meal';
+
+  const subtitleRow = document.getElementById('modal-subtitle-row');
+  subtitleRow.innerHTML =
+    '<span class="modal-meal-type">' + mealTypeLabel + '</span>' +
+    renderStarRating(recipeId);
+
+  // Favorite heart
+  const heart = document.getElementById('modal-favorite-heart');
+  heart.style.display = '';
+  if (rating.is_favorite) heart.classList.add('active');
+  else heart.classList.remove('active');
+
+  // Footer buttons
+  const footer = document.getElementById('modal-footer');
+  const pdfLink = document.getElementById('modal-pdf-link');
+  const editBtn = document.getElementById('modal-edit-btn-footer');
+  const isHF = isRecipeHellofresh(recipeId);
+  let showFooter = false;
+
+  if (opts.pdfPath && isHF) {
+    pdfLink.href = encodeURI(opts.pdfPath);
+    pdfLink.style.display = '';
+    showFooter = true;
+  } else {
+    pdfLink.style.display = 'none';
+  }
+
+  if (opts.editable !== false) {
+    editBtn.style.display = '';
+    showFooter = true;
+  } else {
+    editBtn.style.display = 'none';
+  }
+
+  footer.style.display = showFooter ? '' : 'none';
+
+  // Hide the old top edit button
+  const oldEdit = document.getElementById('modal-edit-btn');
+  if (oldEdit) oldEdit.style.display = 'none';
+}
+
+async function toggleModalFavorite() {
+  if (!currentModalRecipeId) return;
+  const existing = ratingsCache[currentModalRecipeId] || {};
+  const newFav = !(existing.is_favorite || false);
+  await saveRating(currentModalRecipeId, existing.stars || 0, newFav, existing.is_deleted || false);
+  const heart = document.getElementById('modal-favorite-heart');
+  if (newFav) heart.classList.add('active');
+  else heart.classList.remove('active');
+  renderMeals();
 }
 
 function renderMiniStars(recipeId) {
@@ -3989,90 +4225,55 @@ async function clearChecked() {
   await renderShopping();
 }
 
+function buildIngredientsHtml(ingredients) {
+  return '<div class="modal-section">' +
+    '<div class="modal-section-label">Ingredients</div>' +
+    '<div class="modal-ingredients-grid">' +
+      ingredients.map(function(ing) {
+        return '<div class="modal-ingredient"><span class="ing-amount">' + (ing.amount || '') + '</span><span>' + (ing.item || '') + '</span></div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+}
+
+function buildStepsHtml(steps) {
+  return '<div class="modal-section">' +
+    '<div class="modal-section-label">Instructions</div>' +
+    steps.map(function(step, i) {
+      return '<div class="modal-step"><span class="step-num">' + (i + 1) + '</span><span>' + step + '</span></div>';
+    }).join('') +
+  '</div>';
+}
+
 async function openPdfRecipe(path, name) {
   const reg = RECIPE_REGISTRY.find(r => r.name === name);
   const recipeId = reg ? reg.id : 'pdf-' + slugify(name);
   const hfData = HF_RECIPE_DATA[name];
-  const isHF = isRecipeHellofresh(recipeId);
-  currentModalRecipeId = recipeId;
 
-  document.getElementById('modal-title').textContent = name;
-  document.getElementById('modal-eyebrow-text').textContent = 'Recipe';
-  document.getElementById('modal-edit-btn').style.display = '';
   document.getElementById('modal-content').classList.remove('pdf-modal');
 
-  const pdfButton = isHF && path ? `
-      <div class="modal-section" style="text-align:center">
-        <a href="${encodeURI(path)}" target="_blank" class="view-recipe-btn" style="display:inline-block;text-align:center;background:none;border:2px solid var(--accent);color:var(--accent)">
-          Open Recipe Card
-        </a>
-      </div>` : '';
-
-  // Show featured image at top if available
-  const recipeImg = getRecipeImage(recipeId, path);
-  const imageHtml = recipeImg ? `<div style="margin-bottom:16px;border-radius:8px;overflow:hidden"><img src="${recipeImg}" style="width:100%;height:200px;object-fit:cover"></div>` : '';
+  setupRecipeModal(recipeId, name, { pdfPath: path });
 
   if (hfData) {
-    // Structured data available - render like inline recipes
-    document.getElementById('modal-body').innerHTML = `
-      ${imageHtml}
-      <div id="rating-${recipeId}">${renderStarRating(recipeId)}</div>
-      <div style="display:flex;gap:12px;margin-bottom:12px;font-size:13px;color:var(--muted)">
-        <span>${hfData.totalTime} min</span>
-        <span>${hfData.calories} cal</span>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-label">Ingredients</div>
-        ${hfData.ingredients.map(ing => `
-          <div class="modal-ingredient">
-            <span class="ing-amount">${ing.amount}</span>
-            <span>${ing.item}</span>
-          </div>
-        `).join('')}
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-label">Instructions</div>
-        ${hfData.steps.map((step, i) => `
-          <div class="modal-step">
-            <span class="step-num">${i+1}</span>
-            <span>${step}</span>
-          </div>
-        `).join('')}
-      </div>
-      ${pdfButton}
-    `;
+    document.getElementById('modal-body').innerHTML =
+      buildIngredientsHtml(hfData.ingredients) +
+      buildStepsHtml(hfData.steps);
   } else {
-    // No structured data - fall back to PDF extraction
-    let ingredientsHtml = '<p style="color:var(--muted);font-size:13px">Loading ingredients...</p>';
-
-    document.getElementById('modal-body').innerHTML = `
-      ${imageHtml}
-      <div id="rating-${recipeId}">${renderStarRating(recipeId)}</div>
-      <div class="modal-section">
-        <div class="modal-section-label">Ingredients</div>
-        <div id="pdf-ingredients">${ingredientsHtml}</div>
-      </div>
-      <div class="modal-section">
-        <div class="modal-section-label">Instructions</div>
-        ${isHF && path ? `<a href="${encodeURI(path)}" target="_blank" class="view-recipe-btn" style="display:inline-block;text-align:center;background:none;border:2px solid var(--accent);color:var(--accent)">
-          Open Recipe Card
-        </a>` : '<p style="color:var(--muted);font-size:13px">No recipe card available</p>'}
-      </div>
-    `;
+    document.getElementById('modal-body').innerHTML =
+      '<div class="modal-section"><div class="modal-section-label">Ingredients</div><div id="pdf-ingredients"><p style="color:var(--muted);font-size:13px">Loading ingredients...</p></div></div>';
   }
 
   history.pushState({ modal: true, page: getCurrentPage() }, '');
   document.getElementById('modal-overlay').classList.add('open');
 
   if (!hfData) {
-    // Load ingredients async for PDF-only recipes
     const ingredients = await extractPdfIngredients(path);
     const el = document.getElementById('pdf-ingredients');
     if (el) {
       if (ingredients.length > 0) {
-        el.innerHTML = ingredients.map(function(ing) {
+        el.innerHTML = '<div class="modal-ingredients-grid">' + ingredients.map(function(ing) {
           return '<div class="modal-ingredient"><span>' + ing + '</span></div>';
-        }).join('');
+        }).join('') + '</div>';
       } else {
         el.innerHTML = '<p style="color:var(--muted);font-size:13px">See recipe card for ingredients</p>';
       }
@@ -4084,34 +4285,10 @@ function openRecipe(id) {
   const meal = MEALS.find(m => m.id === id);
   if (!meal) return;
   const recipeId = 'meal-' + id;
-  currentModalRecipeId = recipeId;
-  document.getElementById('modal-title').textContent = meal.name;
-  document.getElementById('modal-eyebrow-text').textContent = 'Recipe';
-  document.getElementById('modal-edit-btn').style.display = '';
-  const inlineImg = getRecipeImage(recipeId);
-  const inlineImageHtml = inlineImg ? `<div style="margin-bottom:16px;border-radius:8px;overflow:hidden"><img src="${inlineImg}" style="width:100%;height:200px;object-fit:cover"></div>` : '';
-  document.getElementById('modal-body').innerHTML = `
-    ${inlineImageHtml}
-    <div id="rating-${recipeId}">${renderStarRating(recipeId)}</div>
-    <div class="modal-section">
-      <div class="modal-section-label">Ingredients</div>
-      ${meal.ingredients.map(ing => `
-        <div class="modal-ingredient">
-          <span class="ing-amount">${ing.amount}</span>
-          <span>${ing.item}</span>
-        </div>
-      `).join('')}
-    </div>
-    <div class="modal-section">
-      <div class="modal-section-label">Instructions</div>
-      ${meal.steps.map((step, i) => `
-        <div class="modal-step">
-          <span class="step-num">${i+1}</span>
-          <span>${step}</span>
-        </div>
-      `).join('')}
-    </div>
-  `;
+  setupRecipeModal(recipeId, meal.name, {});
+  document.getElementById('modal-body').innerHTML =
+    buildIngredientsHtml(meal.ingredients) +
+    buildStepsHtml(meal.steps);
   history.pushState({ modal: true, page: getCurrentPage() }, '');
   document.getElementById('modal-overlay').classList.add('open');
 }
@@ -4119,39 +4296,11 @@ function openRecipe(id) {
 function openCustomRecipe(recipeId) {
   var custom = customRecipes.find(function(r) { return r.id === recipeId; });
   if (!custom) return;
-  currentModalRecipeId = recipeId;
-  document.getElementById('modal-title').textContent = custom.name;
-  document.getElementById('modal-eyebrow-text').textContent = 'Custom Recipe';
-  document.getElementById('modal-edit-btn').style.display = '';
   document.getElementById('modal-content').classList.remove('pdf-modal');
-
-  var metaParts = [];
-  if (custom.total_time) metaParts.push(custom.total_time + ' min');
-  if (custom.calories) metaParts.push(custom.calories + ' cal');
-
-  var ingredients = custom.ingredients || [];
-  var steps = custom.steps || [];
-
-  var customImg = getRecipeImage(recipeId);
-  var customImageHtml = customImg ? '<div style="margin-bottom:16px;border-radius:8px;overflow:hidden"><img src="' + customImg + '" style="width:100%;height:200px;object-fit:cover"></div>' : '';
-
+  setupRecipeModal(recipeId, custom.name, {});
   document.getElementById('modal-body').innerHTML =
-    customImageHtml +
-    '<div id="rating-' + recipeId + '">' + renderStarRating(recipeId) + '</div>' +
-    (metaParts.length > 0 ? '<div style="display:flex;gap:12px;margin-bottom:12px;font-size:13px;color:var(--muted)">' + metaParts.map(function(p) { return '<span>' + p + '</span>'; }).join('') + '</div>' : '') +
-    '<div class="modal-section">' +
-      '<div class="modal-section-label">Ingredients</div>' +
-      ingredients.map(function(ing) {
-        return '<div class="modal-ingredient"><span class="ing-amount">' + (ing.amount || '') + '</span><span>' + (ing.item || '') + '</span></div>';
-      }).join('') +
-    '</div>' +
-    '<div class="modal-section">' +
-      '<div class="modal-section-label">Instructions</div>' +
-      steps.map(function(step, i) {
-        return '<div class="modal-step"><span class="step-num">' + (i + 1) + '</span><span>' + step + '</span></div>';
-      }).join('') +
-    '</div>';
-
+    buildIngredientsHtml(custom.ingredients || []) +
+    buildStepsHtml(custom.steps || []);
   history.pushState({ modal: true, page: getCurrentPage() }, '');
   document.getElementById('modal-overlay').classList.add('open');
 }
@@ -4185,7 +4334,13 @@ function closeModal(event) {
   if (!event || event.target === document.getElementById('modal-overlay') || event.target.classList.contains('modal-close')) {
     document.getElementById('modal-overlay').classList.remove('open');
     document.getElementById('modal-content').classList.remove('pdf-modal');
-    document.getElementById('modal-edit-btn').style.display = 'none';
+    const oldEdit = document.getElementById('modal-edit-btn');
+    if (oldEdit) oldEdit.style.display = 'none';
+    document.getElementById('modal-header-img').innerHTML = '';
+    document.getElementById('modal-subtitle-row').innerHTML = '';
+    document.getElementById('modal-favorite-heart').style.display = 'none';
+    document.getElementById('modal-favorite-heart').classList.remove('active');
+    document.getElementById('modal-footer').style.display = 'none';
     currentModalRecipeId = null;
     if (history.state && history.state.modal) {
       history.back();
