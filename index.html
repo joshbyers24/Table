@@ -909,6 +909,142 @@ nav { padding: 12px 16px; }
 .shopping-week-label .full-title { display: none; }
 .shopping-week-label .short-title { display: inline; }
 }
+
+/* RECIPE EDITOR */
+.recipe-editor { max-width: 600px; }
+
+.editor-field {
+  margin-bottom: 16px;
+}
+
+.editor-field label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.editor-field input,
+.editor-field select,
+.editor-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.editor-field input:focus,
+.editor-field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.editor-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.editor-row input { flex: 1; }
+.editor-row .amount-input { max-width: 100px; }
+
+.editor-add-btn {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 8px;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.editor-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.editor-remove-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.editor-remove-btn:hover { color: var(--danger); }
+
+.editor-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.editor-save {
+  flex: 1;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.editor-cancel {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+/* MODAL EDIT BUTTON */
+.modal-edit {
+  position: absolute;
+  top: 16px;
+  right: 48px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.modal-edit:hover { border-color: var(--accent); color: var(--accent); }
+
+/* CUSTOM BADGE */
+.custom-badge {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: #e8f0fe;
+  color: #4a7dbd;
+  padding: 2px 5px;
+  border-radius: 2px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
 </style>
 
 </head>
@@ -973,7 +1109,10 @@ nav { padding: 12px 16px; }
 <!-- MEALS PAGE -->
 
 <div class="page" id="page-meals">
-  <div class="section-label" style="margin-bottom:12px">Recipe Library</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div class="section-label" style="margin:0">Recipe Library</div>
+    <button class="view-recipe-btn" onclick="openRecipeEditor()" style="font-size:10px;padding:8px 16px;margin-top:0">+ Add Recipe</button>
+  </div>
   <div class="filter-bar" id="filter-bar"></div>
   <div class="meals-grid" id="meals-grid"></div>
 </div>
@@ -996,7 +1135,8 @@ nav { padding: 12px 16px; }
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal" id="modal-content">
     <button class="modal-close" onclick="closeModal()">×</button>
-    <div class="modal-eyebrow">Recipe</div>
+    <button class="modal-edit" id="modal-edit-btn" onclick="editCurrentRecipe()" style="display:none">Edit</button>
+    <div class="modal-eyebrow" id="modal-eyebrow-text">Recipe</div>
     <div class="modal-title" id="modal-title">—</div>
     <div id="modal-body"></div>
   </div>
@@ -1013,6 +1153,32 @@ const sb = window.supabase.createClient(
   'sb_publishable_XkCoDaLEQ45cp1tR_QDQiA_8OIWpxwM'
 );
 let ratingsCache = {};
+let customRecipes = [];
+let currentModalRecipeId = null;
+
+async function loadCustomRecipes() {
+  try {
+    const { data } = await sb.from('custom_recipes').select('*');
+    if (data) {
+      customRecipes = data;
+      data.forEach(function(r) {
+        var existing = RECIPE_REGISTRY.findIndex(function(reg) { return reg.id === r.id; });
+        var entry = {
+          id: r.id,
+          name: r.name,
+          source: 'custom',
+          protein: r.protein || 'other',
+          mealType: r.meal_type || 'both',
+          cookTime: r.total_time ? r.total_time + ' min' : null,
+          _totalMinutes: r.total_time,
+          _customData: r
+        };
+        if (existing >= 0) RECIPE_REGISTRY[existing] = entry;
+        else RECIPE_REGISTRY.push(entry);
+      });
+    }
+  } catch(e) { console.warn('Custom recipes load failed:', e); }
+}
 
 async function loadRatings() {
   const { data } = await sb.from('ratings').select('*');
@@ -1668,7 +1834,17 @@ function generateShoppingList() {
     const recipe = getDinnerForDate(date);
     if (!recipe) continue;
 
-    if (recipe.source === 'inline') {
+    if (recipe.source === 'custom') {
+      const customData = recipe._customData || customRecipes.find(function(r) { return r.id === recipe.id; });
+      if (customData && customData.ingredients) {
+        customData.ingredients.forEach(function(ing) {
+          const key = ing.item;
+          if (!inlineIngredients[key]) {
+            inlineIngredients[key] = { amount: ing.amount, item: ing.item };
+          }
+        });
+      }
+    } else if (recipe.source === 'inline') {
       const meal = MEALS.find(m => m.id === recipe.mealId);
       if (meal && meal.ingredients) {
         meal.ingredients.forEach(ing => {
@@ -1760,14 +1936,22 @@ function viewDayFromWeek(dateStr) {
   if (dinner.recipeId) {
     const reg = RECIPE_REGISTRY.find(r => r.id === dinner.recipeId);
     if (reg) {
-      const clickHandler = reg.source === 'inline'
-        ? `closeModal(); openRecipe(${reg.mealId})`
-        : `closeModal(); openPdfRecipe('${reg.path.replace(/'/g,"\\'")}', '${reg.name.replace(/'/g,"\\'")}')`;
+      let clickHandler;
+      if (reg.source === 'custom') {
+        clickHandler = `closeModal(); openCustomRecipe('${reg.id.replace(/'/g,"\\'")}')`;
+      } else if (reg.source === 'inline') {
+        clickHandler = `closeModal(); openRecipe(${reg.mealId})`;
+      } else {
+        clickHandler = `closeModal(); openPdfRecipe('${reg.path.replace(/'/g,"\\'")}', '${reg.name.replace(/'/g,"\\'")}')`;
+      }
       recipeBtn = `<button class="view-recipe-btn" onclick="${clickHandler}" style="margin-right:8px">View Recipe</button>`;
     }
   }
 
   document.getElementById('modal-title').textContent = dayName;
+  document.getElementById('modal-eyebrow-text').textContent = 'Day View';
+  document.getElementById('modal-edit-btn').style.display = 'none';
+  currentModalRecipeId = null;
   document.getElementById('modal-body').innerHTML = `
     <div style="color:var(--muted);font-size:14px;margin-bottom:20px">${dateLabel}</div>
     <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">${dinnerName}</div>
@@ -2215,9 +2399,14 @@ function renderMeals() {
   // Render grid - uniform cards for all recipes
   const grid = document.getElementById('meals-grid');
   grid.innerHTML = recipes.map(r => {
-    const clickHandler = r.source === 'inline'
-      ? `openRecipe(${r.mealId})`
-      : `openPdfRecipe('${r.path.replace(/'/g,"\\'")}', '${r.name.replace(/'/g,"\\'")}')`;
+    let clickHandler;
+    if (r.source === 'custom') {
+      clickHandler = `openCustomRecipe('${r.id.replace(/'/g,"\\'")}')`;
+    } else if (r.source === 'inline') {
+      clickHandler = `openRecipe(${r.mealId})`;
+    } else {
+      clickHandler = `openPdfRecipe('${r.path.replace(/'/g,"\\'")}', '${r.name.replace(/'/g,"\\'")}')`;
+    }
     const thumbContent = r.source === 'pdf'
       ? `<div class="meal-card-thumb" data-pdf-path="${r.path}"></div>`
       : `<div class="meal-card-thumb" style="background:var(--accent-light)"></div>`;
@@ -2225,14 +2414,16 @@ function renderMeals() {
     if (r.cookTime) metaParts.push(r.cookTime);
     const miniStars = renderMiniStars(r.id);
     if (miniStars) metaParts.push(miniStars);
-    const hfTag = r.source === 'pdf' ? `<span class="hf-badge">${r.category === 'special' ? 'Special' : 'HF'}</span>` : '';
+    let badge = '';
+    if (r.source === 'pdf') badge = `<span class="hf-badge">${r.category === 'special' ? 'Special' : 'HF'}</span>`;
+    else if (r.source === 'custom') badge = '<span class="custom-badge">Custom</span>';
     return `
       <div class="meal-card" onclick="${clickHandler}">
         ${thumbContent}
         <div class="meal-card-body">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div class="meal-card-title">${r.name}</div>
-            ${hfTag}
+            ${badge}
           </div>
           <div class="meal-card-meta">${metaParts.join(' · ')}</div>
         </div>
@@ -2364,8 +2555,11 @@ async function openPdfRecipe(path, name) {
   const reg = RECIPE_REGISTRY.find(r => r.name === name);
   const recipeId = reg ? reg.id : 'pdf-' + slugify(name);
   const hfData = HF_RECIPE_DATA[name];
+  currentModalRecipeId = recipeId;
 
   document.getElementById('modal-title').textContent = name;
+  document.getElementById('modal-eyebrow-text').textContent = 'Recipe';
+  document.getElementById('modal-edit-btn').style.display = '';
   document.getElementById('modal-content').classList.remove('pdf-modal');
 
   if (hfData) {
@@ -2442,7 +2636,10 @@ function openRecipe(id) {
   const meal = MEALS.find(m => m.id === id);
   if (!meal) return;
   const recipeId = 'meal-' + id;
+  currentModalRecipeId = recipeId;
   document.getElementById('modal-title').textContent = meal.name;
+  document.getElementById('modal-eyebrow-text').textContent = 'Recipe';
+  document.getElementById('modal-edit-btn').style.display = '';
   document.getElementById('modal-body').innerHTML = `
     <div id="rating-${recipeId}">${renderStarRating(recipeId)}</div>
     <div class="modal-section">
@@ -2468,10 +2665,48 @@ function openRecipe(id) {
   document.getElementById('modal-overlay').classList.add('open');
 }
 
+function openCustomRecipe(recipeId) {
+  var custom = customRecipes.find(function(r) { return r.id === recipeId; });
+  if (!custom) return;
+  currentModalRecipeId = recipeId;
+  document.getElementById('modal-title').textContent = custom.name;
+  document.getElementById('modal-eyebrow-text').textContent = 'Custom Recipe';
+  document.getElementById('modal-edit-btn').style.display = '';
+  document.getElementById('modal-content').classList.remove('pdf-modal');
+
+  var metaParts = [];
+  if (custom.total_time) metaParts.push(custom.total_time + ' min');
+  if (custom.calories) metaParts.push(custom.calories + ' cal');
+
+  var ingredients = custom.ingredients || [];
+  var steps = custom.steps || [];
+
+  document.getElementById('modal-body').innerHTML =
+    '<div id="rating-' + recipeId + '">' + renderStarRating(recipeId) + '</div>' +
+    (metaParts.length > 0 ? '<div style="display:flex;gap:12px;margin-bottom:12px;font-size:13px;color:var(--muted)">' + metaParts.map(function(p) { return '<span>' + p + '</span>'; }).join('') + '</div>' : '') +
+    '<div class="modal-section">' +
+      '<div class="modal-section-label">Ingredients</div>' +
+      ingredients.map(function(ing) {
+        return '<div class="modal-ingredient"><span class="ing-amount">' + (ing.amount || '') + '</span><span>' + (ing.item || '') + '</span></div>';
+      }).join('') +
+    '</div>' +
+    '<div class="modal-section">' +
+      '<div class="modal-section-label">Instructions</div>' +
+      steps.map(function(step, i) {
+        return '<div class="modal-step"><span class="step-num">' + (i + 1) + '</span><span>' + step + '</span></div>';
+      }).join('') +
+    '</div>';
+
+  history.pushState({ modal: true, page: getCurrentPage() }, '');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
 function openMealFromTimeline(recipeId) {
   const reg = RECIPE_REGISTRY.find(r => r.id === recipeId);
   if (!reg) return;
-  if (reg.source === 'inline') {
+  if (reg.source === 'custom') {
+    openCustomRecipe(reg.id);
+  } else if (reg.source === 'inline') {
     openRecipe(reg.mealId);
   } else {
     openPdfRecipe(reg.path, reg.name);
@@ -2495,6 +2730,8 @@ function closeModal(event) {
   if (!event || event.target === document.getElementById('modal-overlay') || event.target.classList.contains('modal-close')) {
     document.getElementById('modal-overlay').classList.remove('open');
     document.getElementById('modal-content').classList.remove('pdf-modal');
+    document.getElementById('modal-edit-btn').style.display = 'none';
+    currentModalRecipeId = null;
     if (history.state && history.state.modal) {
       history.back();
     }
@@ -2509,11 +2746,310 @@ window.addEventListener('popstate', function(e) {
 });
 
 // ============================================================
+// RECIPE EDITOR
+// ============================================================
+
+let editorRecipeId = null;
+
+function openRecipeEditor(recipeId) {
+  editorRecipeId = recipeId || null;
+  var data = { name: '', prepTime: '', totalTime: '', calories: '', protein: 'chicken', mealType: 'both', ingredients: [{ amount: '', item: '' }], steps: [''] };
+
+  if (recipeId) {
+    var custom = customRecipes.find(function(r) { return r.id === recipeId; });
+    if (custom) {
+      data = {
+        name: custom.name,
+        prepTime: custom.prep_time || '',
+        totalTime: custom.total_time || '',
+        calories: custom.calories || '',
+        protein: custom.protein || 'other',
+        mealType: custom.meal_type || 'both',
+        ingredients: (custom.ingredients && custom.ingredients.length > 0) ? custom.ingredients : [{ amount: '', item: '' }],
+        steps: (custom.steps && custom.steps.length > 0) ? custom.steps : ['']
+      };
+    } else {
+      var reg = RECIPE_REGISTRY.find(function(r) { return r.id === recipeId; });
+      if (reg && reg.source === 'inline') {
+        var meal = MEALS.find(function(m) { return m.id === reg.mealId; });
+        if (meal) {
+          data = {
+            name: meal.name,
+            prepTime: parseInt(meal.cookTime) || '',
+            totalTime: parseInt(meal.cookTime) || '',
+            calories: '',
+            protein: reg.protein,
+            mealType: meal.type,
+            ingredients: meal.ingredients.map(function(i) { return { amount: i.amount, item: i.item }; }),
+            steps: meal.steps.slice()
+          };
+        }
+      } else if (reg) {
+        var hfData = HF_RECIPE_DATA[reg.name];
+        if (hfData) {
+          data = {
+            name: reg.name,
+            prepTime: hfData.prepTime || '',
+            totalTime: hfData.totalTime || '',
+            calories: hfData.calories || '',
+            protein: reg.protein,
+            mealType: reg.mealType,
+            ingredients: hfData.ingredients.map(function(i) { return { amount: i.amount, item: i.item }; }),
+            steps: hfData.steps.slice()
+          };
+        } else {
+          data.name = reg.name;
+          data.protein = reg.protein;
+          data.mealType = reg.mealType;
+        }
+      }
+    }
+  }
+
+  renderRecipeEditor(data);
+}
+
+function renderRecipeEditor(data) {
+  document.getElementById('modal-title').textContent = editorRecipeId ? 'Edit Recipe' : 'New Recipe';
+  document.getElementById('modal-eyebrow-text').textContent = editorRecipeId ? 'Edit' : 'Create';
+  document.getElementById('modal-edit-btn').style.display = 'none';
+
+  var ingredientsHtml = data.ingredients.map(function(ing, i) {
+    return '<div class="editor-row">' +
+      '<input class="amount-input" type="text" placeholder="Amount" value="' + (ing.amount || '').replace(/"/g, '&quot;') + '" data-ing-amount="' + i + '">' +
+      '<input type="text" placeholder="Ingredient" value="' + (ing.item || '').replace(/"/g, '&quot;') + '" data-ing-item="' + i + '">' +
+      '<button class="editor-remove-btn" onclick="removeEditorIngredient(' + i + ')" type="button">&times;</button>' +
+      '</div>';
+  }).join('');
+
+  var stepsHtml = data.steps.map(function(step, i) {
+    return '<div class="editor-row">' +
+      '<span style="color:var(--accent);font-weight:700;min-width:24px">' + (i + 1) + '</span>' +
+      '<textarea rows="2" placeholder="Step ' + (i + 1) + '..." data-step="' + i + '">' + (step || '').replace(/</g, '&lt;') + '</textarea>' +
+      '<button class="editor-remove-btn" onclick="removeEditorStep(' + i + ')" type="button">&times;</button>' +
+      '</div>';
+  }).join('');
+
+  document.getElementById('modal-body').innerHTML = '<div class="recipe-editor">' +
+    '<div class="editor-field"><label>Recipe Name</label><input type="text" id="editor-name" value="' + (data.name || '').replace(/"/g, '&quot;') + '"></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">' +
+      '<div class="editor-field"><label>Prep Time (min)</label><input type="number" id="editor-prep" value="' + data.prepTime + '"></div>' +
+      '<div class="editor-field"><label>Total Time (min)</label><input type="number" id="editor-total" value="' + data.totalTime + '"></div>' +
+      '<div class="editor-field"><label>Calories</label><input type="number" id="editor-cal" value="' + data.calories + '"></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+      '<div class="editor-field"><label>Protein</label>' +
+        '<select id="editor-protein">' +
+          '<option value="chicken"' + (data.protein === 'chicken' ? ' selected' : '') + '>Chicken</option>' +
+          '<option value="beef"' + (data.protein === 'beef' ? ' selected' : '') + '>Beef</option>' +
+          '<option value="pork"' + (data.protein === 'pork' ? ' selected' : '') + '>Pork</option>' +
+          '<option value="turkey"' + (data.protein === 'turkey' ? ' selected' : '') + '>Turkey</option>' +
+          '<option value="seafood"' + (data.protein === 'seafood' ? ' selected' : '') + '>Seafood</option>' +
+          '<option value="other"' + (data.protein === 'other' ? ' selected' : '') + '>Other</option>' +
+        '</select>' +
+      '</div>' +
+      '<div class="editor-field"><label>Meal Type</label>' +
+        '<select id="editor-mealtype">' +
+          '<option value="solo"' + (data.mealType === 'solo' ? ' selected' : '') + '>Solo</option>' +
+          '<option value="kids"' + (data.mealType === 'kids' ? ' selected' : '') + '>Family</option>' +
+          '<option value="both"' + (data.mealType === 'both' ? ' selected' : '') + '>Both</option>' +
+        '</select>' +
+      '</div>' +
+    '</div>' +
+    '<div class="editor-field"><label>Ingredients</label>' +
+      '<div id="editor-ingredients">' + ingredientsHtml + '</div>' +
+      '<button class="editor-add-btn" onclick="addEditorIngredient()" type="button">+ Add Ingredient</button>' +
+    '</div>' +
+    '<div class="editor-field"><label>Steps</label>' +
+      '<div id="editor-steps">' + stepsHtml + '</div>' +
+      '<button class="editor-add-btn" onclick="addEditorStep()" type="button">+ Add Step</button>' +
+    '</div>' +
+    '<div class="editor-actions">' +
+      '<button class="editor-cancel" onclick="closeModal()" type="button">Cancel</button>' +
+      '<button class="editor-save" onclick="saveRecipe()" type="button">Save Recipe</button>' +
+    '</div>' +
+  '</div>';
+
+  document.getElementById('modal-overlay').classList.add('open');
+  history.pushState({ modal: true, page: getCurrentPage() }, '');
+}
+
+function getEditorIngredients() {
+  var ings = [];
+  var container = document.getElementById('editor-ingredients');
+  var rows = container.querySelectorAll('.editor-row');
+  rows.forEach(function(row) {
+    var amountInput = row.querySelector('[data-ing-amount]');
+    var itemInput = row.querySelector('[data-ing-item]');
+    if (amountInput && itemInput) {
+      ings.push({ amount: amountInput.value.trim(), item: itemInput.value.trim() });
+    }
+  });
+  return ings;
+}
+
+function getEditorSteps() {
+  var steps = [];
+  var container = document.getElementById('editor-steps');
+  var rows = container.querySelectorAll('.editor-row');
+  rows.forEach(function(row) {
+    var textarea = row.querySelector('textarea');
+    if (textarea) steps.push(textarea.value.trim());
+  });
+  return steps;
+}
+
+function addEditorIngredient() {
+  var ings = getEditorIngredients();
+  ings.push({ amount: '', item: '' });
+  var data = getCurrentEditorData();
+  data.ingredients = ings;
+  updateEditorIngredients(data.ingredients);
+}
+
+function removeEditorIngredient(idx) {
+  var ings = getEditorIngredients();
+  ings.splice(idx, 1);
+  if (ings.length === 0) ings.push({ amount: '', item: '' });
+  updateEditorIngredients(ings);
+}
+
+function updateEditorIngredients(ings) {
+  var html = ings.map(function(ing, i) {
+    return '<div class="editor-row">' +
+      '<input class="amount-input" type="text" placeholder="Amount" value="' + (ing.amount || '').replace(/"/g, '&quot;') + '" data-ing-amount="' + i + '">' +
+      '<input type="text" placeholder="Ingredient" value="' + (ing.item || '').replace(/"/g, '&quot;') + '" data-ing-item="' + i + '">' +
+      '<button class="editor-remove-btn" onclick="removeEditorIngredient(' + i + ')" type="button">&times;</button>' +
+      '</div>';
+  }).join('');
+  document.getElementById('editor-ingredients').innerHTML = html;
+}
+
+function addEditorStep() {
+  var steps = getEditorSteps();
+  steps.push('');
+  updateEditorSteps(steps);
+}
+
+function removeEditorStep(idx) {
+  var steps = getEditorSteps();
+  steps.splice(idx, 1);
+  if (steps.length === 0) steps.push('');
+  updateEditorSteps(steps);
+}
+
+function updateEditorSteps(steps) {
+  var html = steps.map(function(step, i) {
+    return '<div class="editor-row">' +
+      '<span style="color:var(--accent);font-weight:700;min-width:24px">' + (i + 1) + '</span>' +
+      '<textarea rows="2" placeholder="Step ' + (i + 1) + '..." data-step="' + i + '">' + (step || '').replace(/</g, '&lt;') + '</textarea>' +
+      '<button class="editor-remove-btn" onclick="removeEditorStep(' + i + ')" type="button">&times;</button>' +
+      '</div>';
+  }).join('');
+  document.getElementById('editor-steps').innerHTML = html;
+}
+
+function getCurrentEditorData() {
+  return {
+    name: (document.getElementById('editor-name') || {}).value || '',
+    prepTime: (document.getElementById('editor-prep') || {}).value || '',
+    totalTime: (document.getElementById('editor-total') || {}).value || '',
+    calories: (document.getElementById('editor-cal') || {}).value || '',
+    protein: (document.getElementById('editor-protein') || {}).value || 'other',
+    mealType: (document.getElementById('editor-mealtype') || {}).value || 'both',
+    ingredients: getEditorIngredients(),
+    steps: getEditorSteps()
+  };
+}
+
+async function saveRecipe() {
+  var data = getCurrentEditorData();
+  if (!data.name.trim()) {
+    alert('Please enter a recipe name.');
+    return;
+  }
+
+  var id = editorRecipeId || ('custom-' + slugify(data.name));
+
+  // If editing a non-custom recipe, create a custom copy with the same ID
+  var existingCustom = customRecipes.find(function(r) { return r.id === id; });
+  if (!existingCustom && editorRecipeId) {
+    // Editing an inline/HF recipe: use a custom-prefixed ID
+    id = 'custom-' + slugify(data.name);
+  }
+
+  var ingredients = data.ingredients.filter(function(i) { return i.item.trim() !== ''; });
+  var steps = data.steps.filter(function(s) { return s.trim() !== ''; });
+
+  var row = {
+    id: id,
+    name: data.name.trim(),
+    ingredients: ingredients,
+    steps: steps,
+    prep_time: data.prepTime ? parseInt(data.prepTime) : null,
+    total_time: data.totalTime ? parseInt(data.totalTime) : null,
+    calories: data.calories ? parseInt(data.calories) : null,
+    protein: data.protein,
+    meal_type: data.mealType,
+    updated_at: new Date().toISOString()
+  };
+
+  try {
+    await sb.from('custom_recipes').upsert(row);
+  } catch(e) {
+    console.warn('Save failed:', e);
+    alert('Failed to save recipe. Check console.');
+    return;
+  }
+
+  // Update local data
+  var existingIdx = customRecipes.findIndex(function(r) { return r.id === id; });
+  if (existingIdx >= 0) {
+    customRecipes[existingIdx] = row;
+  } else {
+    customRecipes.push(row);
+  }
+
+  // Update RECIPE_REGISTRY
+  var regIdx = RECIPE_REGISTRY.findIndex(function(r) { return r.id === id; });
+  var entry = {
+    id: id,
+    name: row.name,
+    source: 'custom',
+    protein: row.protein || 'other',
+    mealType: row.meal_type || 'both',
+    cookTime: row.total_time ? row.total_time + ' min' : null,
+    _totalMinutes: row.total_time,
+    _customData: row
+  };
+  if (regIdx >= 0) {
+    RECIPE_REGISTRY[regIdx] = entry;
+  } else {
+    RECIPE_REGISTRY.push(entry);
+  }
+
+  // Close modal and re-render
+  document.getElementById('modal-overlay').classList.remove('open');
+  if (history.state && history.state.modal) history.back();
+  renderMeals();
+}
+
+function editCurrentRecipe() {
+  if (!currentModalRecipeId) return;
+  // Close the current modal view first
+  document.getElementById('modal-overlay').classList.remove('open');
+  if (history.state && history.state.modal) history.back();
+  // Open editor
+  setTimeout(function() { openRecipeEditor(currentModalRecipeId); }, 50);
+}
+
+// ============================================================
 // INIT
 // ============================================================
 
 (async function init() {
   try { await loadRatings(); } catch(e) { console.warn('Ratings load failed:', e); }
+  try { await loadCustomRecipes(); } catch(e) { console.warn('Custom recipes load failed:', e); }
   renderToday();
   renderWeek();
   renderMeals();
