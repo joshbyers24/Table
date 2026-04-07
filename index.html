@@ -1527,23 +1527,30 @@ nav { padding: 12px 16px; }
 .hf-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
   cursor: pointer;
   margin-left: 0;
+  line-height: 1;
 }
 
 .hf-toggle input[type="checkbox"] {
   accent-color: var(--accent);
-  width: 14px;
-  height: 14px;
+  width: 11px;
+  height: 11px;
   margin: 0;
+  padding: 0;
   flex-shrink: 0;
+  display: block;
 }
 
-.hf-toggle span { line-height: 1; }
+.hf-toggle span {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
 
 /* RECIPE IMAGE PREVIEW IN EDITOR */
 .editor-image-preview {
