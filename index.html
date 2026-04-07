@@ -4423,7 +4423,14 @@ function openRecipeEditor(recipeId) {
 function renderRecipeEditor(data) {
   document.getElementById('modal-title').textContent = editorRecipeId ? 'Edit Recipe' : 'New Recipe';
   document.getElementById('modal-eyebrow-text').textContent = editorRecipeId ? 'Edit' : 'Create';
-  document.getElementById('modal-edit-btn').style.display = 'none';
+  document.getElementById('modal-eyebrow-text').style.display = '';
+  // Hide all the recipe-view elements (header image, subtitle, heart, footer)
+  document.getElementById('modal-header-img').innerHTML = '';
+  document.getElementById('modal-subtitle-row').innerHTML = '';
+  document.getElementById('modal-favorite-heart').style.display = 'none';
+  document.getElementById('modal-footer').style.display = 'none';
+  const oldEdit = document.getElementById('modal-edit-btn');
+  if (oldEdit) oldEdit.style.display = 'none';
 
   var ingredientsHtml = data.ingredients.map(function(ing, i) {
     return '<div class="editor-row">' +
