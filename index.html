@@ -401,33 +401,71 @@ justify-content: center;
 font-size: 40px;
 }
 
-.meal-card-body { padding: 20px; }
+.meal-card-body {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.meal-card-date {
+  flex-shrink: 0;
+  text-align: center;
+  font-family: 'DM Sans', sans-serif;
+  min-width: 36px;
+}
+
+.meal-card-date .month {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mid);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.meal-card-date .day {
+  display: block;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+.meal-card-info {
+  flex: 1;
+  min-width: 0;
+}
 
 .meal-card-title {
-font-family: 'Lilita One', sans-serif;
-font-size: 22px;
-font-weight: 400;
-color: var(--text);
-margin-bottom: 6px;
-line-height: 1.2;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meal-card-meta {
-font-family: 'DM Sans', sans-serif;
-font-size: 14px;
-color: var(--muted);
-font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-/* HF BADGE - SVG corner badge */
+/* HF BADGE - SVG inside body, vertically centered on right */
 .hf-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 44px;
-  height: 44px;
-  z-index: 5;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
 }
 
 .hf-badge svg {
@@ -436,19 +474,22 @@ font-weight: 500;
 }
 
 .hf-badge.text-only {
-  position: static;
   width: auto;
   height: auto;
-  filter: none;
-  font-family: 'Lilita One', sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 10px;
+  font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
   background: var(--accent);
   color: white;
-  padding: 3px 8px;
+  padding: 4px 8px;
   border-radius: 4px;
-  display: inline-block;
+}
+
+.meal-card .meal-card-thumb {
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
 }
 
 /* PDF CARD HEADER STRIP */
@@ -460,7 +501,7 @@ font-weight: 500;
 /* PDF THUMBNAIL */
 .meal-card-thumb {
   width: 100%;
-  height: 160px;
+  height: 200px;
   overflow: hidden;
   background: var(--surface2);
   display: flex;
@@ -475,51 +516,102 @@ font-weight: 500;
   object-fit: cover;
 }
 
-/* WEEK NAV TABS (Plan page) */
+/* PLAN PAGE BENTO GRID (7 cards: 2 + big+2 + 2) */
+.bento-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.bento-grid > .meal-card:nth-child(3) {
+  grid-row: span 2;
+}
+
+.bento-grid > .meal-card:nth-child(3) .meal-card-thumb {
+  height: 100%;
+  min-height: 280px;
+}
+
+@media (max-width: 768px) {
+  .bento-grid { grid-template-columns: 1fr; }
+  .bento-grid > .meal-card:nth-child(3) { grid-row: auto; }
+  .bento-grid > .meal-card:nth-child(3) .meal-card-thumb { min-height: 200px; }
+}
+
+/* WEEK NAV (Plan page) */
+.week-nav-wrapper {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.week-nav-arrow {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  width: 48px;
+  flex-shrink: 0;
+  cursor: pointer;
+  font-size: 20px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.week-nav-arrow:hover { border-color: var(--accent); color: var(--accent); }
+
 .week-nav-tabs {
   display: flex;
-  gap: 8px;
-  margin-bottom: 28px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
 }
 
 .week-nav-tab {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 14px 20px;
-  font-family: 'Lilita One', sans-serif;
-  font-size: 16px;
+  flex: 1;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--border);
+  padding: 14px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--text);
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
   text-align: center;
-  min-width: 120px;
-  flex-shrink: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  min-width: 0;
 }
 
-.week-nav-tab:hover { border-color: var(--accent); }
+.week-nav-tab:last-child { border-right: none; }
+.week-nav-tab:hover { background: var(--surface2); }
 .week-nav-tab.active {
   background: var(--accent);
   color: white;
-  border-color: var(--accent);
 }
 
 .week-nav-tab .week-tab-label {
   display: block;
+  font-family: 'DM Sans', sans-serif;
   font-size: 11px;
-  letter-spacing: 1px;
+  font-weight: 500;
   opacity: 0.7;
   margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .week-nav-tab .week-tab-dates {
-  font-size: 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 /* MEALS PAGE SECTIONS */
@@ -991,8 +1083,8 @@ line-height: 1.6;
 }
 
 .mini-stars .mini-star {
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
   fill: var(--border);
 }
 
@@ -1260,8 +1352,12 @@ nav { padding: 12px 16px; }
 <!-- WEEK PAGE -->
 
 <div class="page" id="page-week">
-  <div class="week-nav-tabs" id="week-nav-tabs"></div>
-  <div class="week-meals-grid meals-grid" id="week-meals-grid"></div>
+  <div class="week-nav-wrapper">
+    <button class="week-nav-arrow" onclick="navigatePlanWeeks(-1)">&#8249;</button>
+    <div class="week-nav-tabs" id="week-nav-tabs"></div>
+    <button class="week-nav-arrow" onclick="navigatePlanWeeks(1)">&#8250;</button>
+  </div>
+  <div class="bento-grid" id="week-meals-grid"></div>
 </div>
 
 <!-- MEALS PAGE -->
@@ -3214,6 +3310,14 @@ const HF_BADGE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 246.0
 
 // Currently viewed Plan week (offset from current Sunday, 0 = current week)
 let currentPlanWeekOffset = 0;
+// Block offset for next/prev arrows (shifts the entire 6-week window)
+let planWeekBlockOffset = 0;
+
+function navigatePlanWeeks(delta) {
+  planWeekBlockOffset += delta * 6;
+  currentPlanWeekOffset = planWeekBlockOffset;
+  renderWeek();
+}
 
 function getSundayOfWeek(date) {
   const d = new Date(date);
@@ -3228,20 +3332,25 @@ function renderWeek() {
   today.setHours(0,0,0,0);
   const todaySunday = getSundayOfWeek(today);
 
-  // Render 5 week tabs starting from current week
+  // Render 6 week tabs based on current block offset
   const tabsContainer = document.getElementById('week-nav-tabs');
   let tabsHtml = '';
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
+    const offset = planWeekBlockOffset + i;
     const weekStart = new Date(todaySunday);
-    weekStart.setDate(weekStart.getDate() + (i * 7));
+    weekStart.setDate(weekStart.getDate() + (offset * 7));
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
-    const label = i === 0 ? 'This Week' : (i === 1 ? 'Next Week' : 'Week ' + (i + 1));
+    let label;
+    if (offset === 0) label = 'This Week';
+    else if (offset === 1) label = 'Next Week';
+    else if (offset === -1) label = 'Last Week';
+    else label = (offset > 0 ? '+' : '') + offset + ' wks';
     const dates = monthNames[weekStart.getMonth()] + ' ' + weekStart.getDate() + ' - ' + monthNames[weekEnd.getMonth()] + ' ' + weekEnd.getDate();
-    tabsHtml += '<div class="week-nav-tab' + (i === currentPlanWeekOffset ? ' active' : '') + '" onclick="setPlanWeek(' + i + ')">' +
+    tabsHtml += '<button class="week-nav-tab' + (offset === currentPlanWeekOffset ? ' active' : '') + '" onclick="setPlanWeek(' + offset + ')">' +
       '<span class="week-tab-label">' + label + '</span>' +
       '<span class="week-tab-dates">' + dates + '</span>' +
-    '</div>';
+    '</button>';
   }
   tabsContainer.innerHTML = tabsHtml;
 
@@ -3261,8 +3370,7 @@ function renderWeek() {
     if (!dinner.recipeId) continue;
     const reg = RECIPE_REGISTRY.find(r => r.id === dinner.recipeId);
     if (!reg) continue;
-    const dayLabel = dayNames[date.getDay()] + ', ' + monthNames[date.getMonth()] + ' ' + date.getDate();
-    cardsHtml += renderMealCard(reg, { dayLabel: dayLabel, isToday: isTodayDate });
+    cardsHtml += renderMealCard(reg, { date: date, isToday: isTodayDate });
   }
   grid.innerHTML = cardsHtml;
 
@@ -3294,22 +3402,40 @@ function renderMealCard(r, opts) {
   } else {
     thumbContent = '<div class="meal-card-thumb" style="background:linear-gradient(135deg,#f0f5e8,#e0ead4)"></div>';
   }
-  const metaParts = [];
-  if (opts.dayLabel) metaParts.push('<strong style="color:var(--text)">' + opts.dayLabel + '</strong>');
-  if (r.cookTime) metaParts.push(r.cookTime);
+
+  // Date block (left side) - only on Plan page
+  let dateBlock = '';
+  if (opts.date) {
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    dateBlock = '<div class="meal-card-date">' +
+      '<span class="month">' + monthNames[opts.date.getMonth()] + '</span>' +
+      '<span class="day">' + opts.date.getDate() + '</span>' +
+    '</div>';
+  }
+
+  // Meta: time + stars
+  let metaText = '';
+  const cookTimeStr = r.cookTime ? (r.cookTime.toString().toLowerCase().includes('min') ? r.cookTime : r.cookTime + ' Min') : '';
+  if (cookTimeStr) metaText += cookTimeStr;
   const miniStars = renderMiniStars(r.id);
-  if (miniStars) metaParts.push(miniStars);
+  if (miniStars) metaText += (metaText ? ' ' : '') + miniStars;
+
+  // HF badge on right
   const isHF = isRecipeHellofresh(r.id);
   let badge = '';
   if (isHF) badge = '<div class="hf-badge">' + HF_BADGE_SVG + '</div>';
   else if (r.source === 'custom') badge = '<div class="hf-badge text-only">Custom</div>';
+
   const todayClass = opts.isToday ? ' today-card' : '';
   return '<div class="meal-card' + todayClass + '" onclick="' + clickHandler + '">' +
-    badge +
     thumbContent +
     '<div class="meal-card-body">' +
-      '<div class="meal-card-title">' + r.name + '</div>' +
-      '<div class="meal-card-meta">' + metaParts.join(' · ') + '</div>' +
+      dateBlock +
+      '<div class="meal-card-info">' +
+        '<div class="meal-card-title">' + r.name + '</div>' +
+        '<div class="meal-card-meta">' + metaText + '</div>' +
+      '</div>' +
+      badge +
     '</div>' +
   '</div>';
 }
