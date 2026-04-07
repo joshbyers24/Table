@@ -4168,6 +4168,13 @@ function renderMeals() {
     return true;
   });
 
+  // Sort: custom recipes first, then everything else
+  recipes.sort((a, b) => {
+    const aCustom = a.source === 'custom' ? 0 : 1;
+    const bCustom = b.source === 'custom' ? 0 : 1;
+    return aCustom - bCustom;
+  });
+
   // Render grid - uniform cards using shared renderer
   const grid = document.getElementById('meals-grid');
   grid.innerHTML = recipes.map(r => renderMealCard(r)).join('');
