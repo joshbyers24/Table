@@ -1808,27 +1808,43 @@ function getRecipeImage(recipeId, pdfPath) {
 
 async function saveRecipeImage(recipeId, imageData) {
   recipeImageCache[recipeId] = imageData;
-  try {
-    await sb.from('recipe_images').upsert({
-      recipe_id: recipeId,
-      image_data: imageData,
-      updated_at: new Date().toISOString()
-    });
-  } catch(e) { console.warn('Image save failed:', e); }
+  const { error } = await sb.from('recipe_images').upsert({
+    recipe_id: recipeId,
+    image_data: imageData,
+    updated_at: new Date().toISOString()
+  });
+  if (error) throw error;
 }
 
 function previewEditorImage(input) {
   if (!input.files || !input.files[0]) return;
   const reader = new FileReader();
   reader.onload = function(e) {
-    const img = document.getElementById('editor-image-img');
-    if (img) {
-      img.src = e.target.result;
-      img.style.display = '';
-      img.dataset.newImage = e.target.result;
-    }
-    const placeholder = document.getElementById('editor-image-placeholder');
-    if (placeholder) placeholder.style.display = 'none';
+    // Resize/compress to keep data URL small enough for Supabase
+    const tempImg = new Image();
+    tempImg.onload = function() {
+      const maxW = 1000;
+      const maxH = 700;
+      let w = tempImg.width;
+      let h = tempImg.height;
+      if (w > maxW) { h = h * (maxW / w); w = maxW; }
+      if (h > maxH) { w = w * (maxH / h); h = maxH; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(tempImg, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      const img = document.getElementById('editor-image-img');
+      if (img) {
+        img.src = dataUrl;
+        img.style.display = '';
+        img.dataset.newImage = dataUrl;
+      }
+      const placeholder = document.getElementById('editor-image-placeholder');
+      if (placeholder) placeholder.style.display = 'none';
+    };
+    tempImg.src = e.target.result;
   };
   reader.readAsDataURL(input.files[0]);
 }
@@ -4710,7 +4726,12 @@ async function saveRecipe() {
   // Save featured image if changed
   var editorImg = document.getElementById('editor-image-img');
   if (editorImg && editorImg.dataset.newImage) {
-    saveRecipeImage(id, editorImg.dataset.newImage);
+    try {
+      await saveRecipeImage(id, editorImg.dataset.newImage);
+    } catch(e) {
+      console.warn('Image save failed:', e);
+      alert('Image upload failed — it may be too large. Try a smaller photo.');
+    }
   }
 
   // Save HelloFresh setting
@@ -4724,6 +4745,8 @@ async function saveRecipe() {
   document.getElementById('modal-overlay').classList.remove('open');
   if (history.state && history.state.modal) history.back();
   renderMeals();
+  renderToday();
+  renderWeek();
 }
 
 function editCurrentRecipe() {
