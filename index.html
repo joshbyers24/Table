@@ -1797,12 +1797,17 @@ function generatePlaceholderImage() {
 function getRecipeImage(recipeId, pdfPath) {
   // 1. Check uploaded images from Supabase
   if (recipeImageCache[recipeId]) return recipeImageCache[recipeId];
-  // 2. Check sessionStorage for extracted image (high quality)
+  // 2. If this is an inline/HF recipe, check if a custom override has an image
+  const reg = RECIPE_REGISTRY.find(r => r.id === recipeId);
+  if (reg) {
+    const custom = customRecipes.find(c => c.name.toLowerCase() === reg.name.toLowerCase());
+    if (custom && recipeImageCache[custom.id]) return recipeImageCache[custom.id];
+  }
+  // 3. Check sessionStorage for extracted image (high quality)
   if (pdfPath) {
     const cached = sessionStorage.getItem('img2:' + pdfPath);
     if (cached) return cached;
   }
-  // 4. Return null (will show placeholder)
   return null;
 }
 
@@ -4138,11 +4143,17 @@ function renderMeals() {
       <option value="60" ${activeTimeFilter === 60 ? 'selected' : ''}>Under 60 min</option>
     </select>`;
 
+  // Build a set of names that have a custom override
+  const customNames = new Set();
+  customRecipes.forEach(c => customNames.add(c.name.toLowerCase()));
+
   // Filter recipes
   let recipes = RECIPE_REGISTRY.filter(r => {
     const rating = ratingsCache[r.id] || {};
     // Hide deleted by default
     if (rating.is_deleted) return false;
+    // Hide original inline/HF entries when a custom override exists for the same name
+    if (r.source !== 'custom' && customNames.has(r.name.toLowerCase())) return false;
     // Protein filter
     if (activeProteinFilter !== 'all' && r.protein !== activeProteinFilter) return false;
     // Favorites filter
@@ -4664,14 +4675,9 @@ async function saveRecipe() {
     return;
   }
 
+  // Use the original recipe ID when editing, so we replace in place
+  // (don't create a duplicate custom-{slug} entry alongside the original)
   var id = editorRecipeId || ('custom-' + slugify(data.name));
-
-  // If editing a non-custom recipe, create a custom copy with the same ID
-  var existingCustom = customRecipes.find(function(r) { return r.id === id; });
-  if (!existingCustom && editorRecipeId) {
-    // Editing an inline/HF recipe: use a custom-prefixed ID
-    id = 'custom-' + slugify(data.name);
-  }
 
   var ingredients = data.ingredients.filter(function(i) { return i.item.trim() !== ''; });
   var steps = data.steps.filter(function(s) { return s.trim() !== ''; });
