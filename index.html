@@ -544,6 +544,64 @@ font-size: 40px;
   .bento-grid > .meal-card:nth-child(3) .meal-card-thumb { min-height: 200px; }
 }
 
+/* MEALS PAGE BENTO GRID (3 col, alternating big left/right every 12) */
+.meals-bento {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+}
+
+.meals-bento > .meal-card { grid-column: span 2; }
+
+/* Big card on left (4th in each 12-cycle) */
+.meals-bento > .meal-card:nth-child(12n+4) {
+  grid-column: 1 / span 4;
+  grid-row: span 2;
+}
+
+/* Small cards 5 and 6 stack on the right of the big card */
+.meals-bento > .meal-card:nth-child(12n+5) { grid-column: 5 / span 2; }
+.meals-bento > .meal-card:nth-child(12n+6) { grid-column: 5 / span 2; }
+
+/* Small cards 10 and 11 stack on the left, before big card 12 */
+.meals-bento > .meal-card:nth-child(12n+10) { grid-column: 1 / span 2; }
+.meals-bento > .meal-card:nth-child(12n+11) { grid-column: 1 / span 2; }
+
+/* Big card on right (12th in each 12-cycle) */
+.meals-bento > .meal-card:nth-child(12n+12) {
+  grid-column: 3 / span 4;
+  grid-row: span 2;
+}
+
+.meals-bento > .meal-card:nth-child(12n+4) .meal-card-thumb,
+.meals-bento > .meal-card:nth-child(12n+12) .meal-card-thumb {
+  flex: 1;
+  height: auto;
+  min-height: 320px;
+}
+
+@media (max-width: 768px) {
+  .meals-bento { grid-template-columns: 1fr 1fr; }
+  .meals-bento > .meal-card { grid-column: auto; }
+  .meals-bento > .meal-card:nth-child(12n+4),
+  .meals-bento > .meal-card:nth-child(12n+5),
+  .meals-bento > .meal-card:nth-child(12n+6),
+  .meals-bento > .meal-card:nth-child(12n+10),
+  .meals-bento > .meal-card:nth-child(12n+11),
+  .meals-bento > .meal-card:nth-child(12n+12) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .meals-bento > .meal-card:nth-child(12n+4) .meal-card-thumb,
+  .meals-bento > .meal-card:nth-child(12n+12) .meal-card-thumb {
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 430px) {
+  .meals-bento { grid-template-columns: 1fr; }
+}
+
 /* WEEK NAV (Plan page) */
 .week-nav-wrapper {
   display: flex;
@@ -1048,21 +1106,21 @@ line-height: 1.6;
 /* FILTER BAR */
 .filter-bar {
   display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 32px;
   flex-wrap: wrap;
   align-items: center;
 }
 
 .filter-chip {
-  background: var(--surface2);
+  background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
-  font-family: 'Lilita One', sans-serif;
-  font-size: 13px;
-  font-weight: 400;
-  padding: 8px 16px;
-  border-radius: 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 999px;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -1071,13 +1129,14 @@ line-height: 1.6;
 .filter-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
 
 .filter-select {
-  background: var(--surface2);
+  background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
   font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
-  padding: 6px 10px;
-  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 999px;
   cursor: pointer;
 }
 
@@ -1369,12 +1428,12 @@ nav { padding: 12px 16px; }
 <!-- MEALS PAGE -->
 
 <div class="page" id="page-meals">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <div class="section-label" style="margin:0">Recipe Library</div>
-    <button class="view-recipe-btn" onclick="openRecipeEditor()" style="font-size:10px;padding:8px 16px;margin-top:0">+ Add Recipe</button>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <div class="section-label" style="margin:0;font-size:32px">Recipe Library</div>
+    <button class="view-recipe-btn" onclick="openRecipeEditor()" style="font-size:18px;padding:14px 28px;margin-top:0">+ Add Recipe</button>
   </div>
   <div class="filter-bar" id="filter-bar"></div>
-  <div class="meals-grid" id="meals-grid"></div>
+  <div class="meals-bento" id="meals-grid"></div>
 </div>
 
 <!-- SHOPPING PAGE -->
@@ -3342,14 +3401,16 @@ function renderWeek() {
     weekStart.setDate(weekStart.getDate() + (offset * 7));
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
-    let label;
-    if (offset === 0) label = 'This Week';
-    else if (offset === 1) label = 'Next Week';
-    else if (offset === -1) label = 'Last Week';
-    else label = (offset > 0 ? '+' : '') + offset + ' wks';
-    const dates = monthNames[weekStart.getMonth()] + ' ' + weekStart.getDate() + ' - ' + monthNames[weekEnd.getMonth()] + ' ' + weekEnd.getDate();
+    // Top label: month (or "Month - Month" if spans two)
+    let monthLabel;
+    if (weekStart.getMonth() === weekEnd.getMonth()) {
+      monthLabel = monthNames[weekStart.getMonth()];
+    } else {
+      monthLabel = monthNames[weekStart.getMonth()] + ' / ' + monthNames[weekEnd.getMonth()];
+    }
+    const dates = weekStart.getDate() + ' - ' + weekEnd.getDate();
     tabsHtml += '<button class="week-nav-tab' + (offset === currentPlanWeekOffset ? ' active' : '') + '" onclick="setPlanWeek(' + offset + ')">' +
-      '<span class="week-tab-label">' + label + '</span>' +
+      '<span class="week-tab-label">' + monthLabel + '</span>' +
       '<span class="week-tab-dates">' + dates + '</span>' +
     '</button>';
   }
