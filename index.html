@@ -373,11 +373,12 @@ gap: 16px;
 .meal-card {
 background: var(--surface);
 border: 1px solid var(--border);
-border-radius: 12px;
+border-radius: 20px;
 overflow: hidden;
 cursor: pointer;
 transition: border-color 0.15s, transform 0.15s;
 box-shadow: var(--shadow);
+position: relative;
 }
 
 .meal-card:hover {
@@ -385,9 +386,14 @@ border-color: var(--accent);
 transform: translateY(-2px);
 }
 
+.meal-card.today-card {
+border-color: var(--accent);
+border-width: 2px;
+}
+
 .meal-card-img {
 width: 100%;
-height: 140px;
+height: 180px;
 background: var(--surface2);
 display: flex;
 align-items: center;
@@ -395,32 +401,54 @@ justify-content: center;
 font-size: 40px;
 }
 
-.meal-card-body { padding: 16px; }
+.meal-card-body { padding: 20px; }
 
 .meal-card-title {
-font-size: 15px;
-font-weight: 500;
-color: var(--white);
-margin-bottom: 4px;
+font-family: 'Lilita One', sans-serif;
+font-size: 22px;
+font-weight: 400;
+color: var(--text);
+margin-bottom: 6px;
+line-height: 1.2;
 }
 
 .meal-card-meta {
-font-size: 11px;
+font-family: 'DM Sans', sans-serif;
+font-size: 14px;
 color: var(--muted);
+font-weight: 500;
 }
 
-/* HF BADGE */
+/* HF BADGE - SVG corner badge */
 .hf-badge {
-  font-size: 8px;
-  font-weight: 700;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  z-index: 5;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+
+.hf-badge svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hf-badge.text-only {
+  position: static;
+  width: auto;
+  height: auto;
+  filter: none;
+  font-family: 'Lilita One', sans-serif;
+  font-size: 10px;
   letter-spacing: 1px;
   text-transform: uppercase;
-  background: #e8f5e0;
-  color: var(--accent2);
-  padding: 2px 5px;
-  border-radius: 2px;
-  margin-left: 6px;
-  vertical-align: middle;
+  background: var(--accent);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
 }
 
 /* PDF CARD HEADER STRIP */
@@ -445,6 +473,53 @@ color: var(--muted);
   max-width: 100%;
   max-height: 100%;
   object-fit: cover;
+}
+
+/* WEEK NAV TABS (Plan page) */
+.week-nav-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 28px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.week-nav-tab {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 20px;
+  font-family: 'Lilita One', sans-serif;
+  font-size: 16px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  text-align: center;
+  min-width: 120px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.week-nav-tab:hover { border-color: var(--accent); }
+.week-nav-tab.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.week-nav-tab .week-tab-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 1px;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.week-nav-tab .week-tab-dates {
+  font-size: 16px;
 }
 
 /* MEALS PAGE SECTIONS */
@@ -1185,20 +1260,8 @@ nav { padding: 12px 16px; }
 <!-- WEEK PAGE -->
 
 <div class="page" id="page-week">
-  <div class="week-header">
-    <button class="date-arrow" onclick="navigateMonth(-1)">&#8249;</button>
-    <div class="week-range-label" id="week-range-label">April 2026</div>
-    <button class="date-arrow" onclick="navigateMonth(1)">&#8250;</button>
-  </div>
-  <div class="month-grid" id="week-grid">
-    <div class="month-header">S</div>
-    <div class="month-header">M</div>
-    <div class="month-header">T</div>
-    <div class="month-header">W</div>
-    <div class="month-header">T</div>
-    <div class="month-header">F</div>
-    <div class="month-header">S</div>
-  </div>
+  <div class="week-nav-tabs" id="week-nav-tabs"></div>
+  <div class="week-meals-grid meals-grid" id="week-meals-grid"></div>
 </div>
 
 <!-- MEALS PAGE -->
@@ -3146,66 +3209,109 @@ function renderToday() {
   `}).join('');
 }
 
-function renderWeek() {
-  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const today = new Date();
-  today.setHours(0,0,0,0);
+// HelloFresh badge SVG (inlined)
+const HF_BADGE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 246.04 246.04"><path fill="#97d913" d="M134.16,18.62c-15.64-.09-30.66,2.94-45.08,8.85-30.72,12.6-53.63,33.52-67.31,64.01-7.13,15.9-10.43,32.54-9.01,50.03.28,3.42.2,6.9-.09,10.32-.86,10.32-4.31,19.77-9.67,28.64-2.57,4.26-2.4,8.91.46,13.09,2.43,3.57,5.91,5.52,10.35,5.45,5.64-.08,11.26.14,16.79,1.42,8.09,1.87,15.52,5.17,22.51,9.69,27.71,17.92,57.71,21.16,89.2,13.2,20.57-5.2,38.74-15.2,54.14-29.8,24.86-23.58,38.37-52.15,36.97-86.96-.21-5.16-.43-10.33.35-15.45,1.37-8.91,4.25-17.29,8.98-25.02,2.9-4.73,2.8-9.56-.42-14.1-2.6-3.67-6.34-5.15-10.8-5.04-14.03.34-26.89-3.35-38.58-11.17-17.79-11.89-37.54-17.14-58.8-17.18"/><path fill="#faf8f4" d="M49.24,170.59c6.61-.07,13.23-.02,19.84-.03,3.4,0,3.49-.1,3.49-3.61,0-8.72.02-17.45,0-26.17,0-1.62.22-2.8,2.28-2.9,9.33-.43,18.47-1.9,27.27-5.22,3.1-1.17,3.22-.96,3.22,2.46,0,10.68,0,21.37,0,32.06,0,3.23.13,3.37,3.27,3.38,6.54.01,13.08.01,19.63,0,3.01,0,3.15-.16,3.15-3.26,0-14.03,0-28.06,0-42.09,0-14.17,0-28.35,0-42.52,0-2.64-.26-2.91-2.85-2.92-6.47-.02-12.94-.01-19.41,0-3.75,0-3.79.03-3.79,3.75,0,8.58-.01,17.15,0,25.73,0,1.39-.16,2.54-1.79,3.05-9.05,2.85-18.29,4.71-27.74,5.44-2.9.23-3.24-.2-3.24-3.15,0-10.61,0-21.23-.01-31.84,0-2.64-.3-2.96-2.83-2.97-6.83-.03-13.67.03-20.5-.04-2.03-.02-2.85.7-2.85,2.79.04,28.42.04,56.84,0,85.27,0,2.1.81,2.81,2.85,2.78"/><path fill="#faf8f4" d="M205.84,79.75c-18.68,0-37.36,0-56.04,0q-3.78,0-3.79,3.7c0,13.81,0,27.62,0,41.43,0,14.1,0,28.2,0,42.3,0,2.86.17,3.04,2.91,3.04,6.76.01,13.52.02,20.28,0,2.61,0,2.83-.23,2.83-2.91,0-8.5,0-17.01-.03-25.51,0-2.77.11-2.94,2.95-2.94,7.92-.01,15.84,0,23.77-.01,2.96,0,3.13-.17,3.14-3.05.02-4.22.01-8.43,0-12.65,0-3.2-.12-3.32-3.32-3.32-7.85,0-15.7,0-23.55-.01-2.76,0-2.94-.2-2.95-3.01-.02-4,0-7.99-.02-11.99-.02-3.32.02-3.39,3.41-3.39,10.39,0,20.79,0,31.18-.01,2.81,0,3.01-.2,3.01-2.95.02-4.94,0-9.89,0-14.83q0-3.89-3.79-3.89"/></svg>';
 
-  const viewYear = currentViewMonth ? currentViewMonth.year : today.getFullYear();
-  const viewMonth = currentViewMonth ? currentViewMonth.month : today.getMonth();
+// Currently viewed Plan week (offset from current Sunday, 0 = current week)
+let currentPlanWeekOffset = 0;
 
-  document.getElementById('week-range-label').textContent = monthNames[viewMonth] + ' ' + viewYear;
-
-  const grid = document.getElementById('week-grid');
-  // Remove old day cells but keep the 7 header elements
-  const headers = grid.querySelectorAll('.month-header');
-  grid.innerHTML = '';
-  headers.forEach(h => grid.appendChild(h));
-
-  // First day of month and total days
-  const firstDay = new Date(viewYear, viewMonth, 1);
-  const startDow = firstDay.getDay(); // 0=Sun
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-
-  // Leading days from previous month
-  const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
-  for (let i = startDow - 1; i >= 0; i--) {
-    const d = new Date(viewYear, viewMonth - 1, prevMonthDays - i);
-    grid.appendChild(createMonthDayCell(d, today, true));
-  }
-
-  // Days of current month
-  for (let day = 1; day <= daysInMonth; day++) {
-    const d = new Date(viewYear, viewMonth, day);
-    grid.appendChild(createMonthDayCell(d, today, false));
-  }
-
-  // Trailing days to fill last row
-  const totalCells = startDow + daysInMonth;
-  const trailing = (7 - (totalCells % 7)) % 7;
-  for (let i = 1; i <= trailing; i++) {
-    const d = new Date(viewYear, viewMonth + 1, i);
-    grid.appendChild(createMonthDayCell(d, today, true));
-  }
+function getSundayOfWeek(date) {
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - d.getDay());
+  return d;
 }
 
-function createMonthDayCell(date, today, isOtherMonth) {
-  const isTodayDate = date.getTime() === today.getTime();
-  const schedule = getMealSchedule(date);
-  const dinner = schedule[4];
-  const status = getKidStatus(date);
-  const dateStr = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
-  const mealName = dinner.detail || '';
+function renderWeek() {
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const todaySunday = getSundayOfWeek(today);
 
-  const cell = document.createElement('div');
-  cell.className = 'month-day' + (isTodayDate ? ' today' : '') + (isOtherMonth ? ' other-month' : '');
-  cell.onclick = function() { viewDayFromWeek(dateStr); };
-  cell.innerHTML = `
-    <div class="month-day-num">${date.getDate()}</div>
-    <div class="month-day-meal" title="${mealName}">${mealName}</div>
-    <span class="month-day-tag ${status}-tag">${status === 'kids' ? 'Kids' : 'Solo'}</span>
-  `;
-  return cell;
+  // Render 5 week tabs starting from current week
+  const tabsContainer = document.getElementById('week-nav-tabs');
+  let tabsHtml = '';
+  for (let i = 0; i < 5; i++) {
+    const weekStart = new Date(todaySunday);
+    weekStart.setDate(weekStart.getDate() + (i * 7));
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    const label = i === 0 ? 'This Week' : (i === 1 ? 'Next Week' : 'Week ' + (i + 1));
+    const dates = monthNames[weekStart.getMonth()] + ' ' + weekStart.getDate() + ' - ' + monthNames[weekEnd.getMonth()] + ' ' + weekEnd.getDate();
+    tabsHtml += '<div class="week-nav-tab' + (i === currentPlanWeekOffset ? ' active' : '') + '" onclick="setPlanWeek(' + i + ')">' +
+      '<span class="week-tab-label">' + label + '</span>' +
+      '<span class="week-tab-dates">' + dates + '</span>' +
+    '</div>';
+  }
+  tabsContainer.innerHTML = tabsHtml;
+
+  // Render meal cards for the selected week
+  const weekStart = new Date(todaySunday);
+  weekStart.setDate(weekStart.getDate() + (currentPlanWeekOffset * 7));
+
+  const grid = document.getElementById('week-meals-grid');
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let cardsHtml = '';
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(weekStart);
+    date.setDate(date.getDate() + i);
+    const isTodayDate = date.getTime() === today.getTime();
+    const schedule = getMealSchedule(date);
+    const dinner = schedule[4];
+    if (!dinner.recipeId) continue;
+    const reg = RECIPE_REGISTRY.find(r => r.id === dinner.recipeId);
+    if (!reg) continue;
+    const dayLabel = dayNames[date.getDay()] + ', ' + monthNames[date.getMonth()] + ' ' + date.getDate();
+    cardsHtml += renderMealCard(reg, { dayLabel: dayLabel, isToday: isTodayDate });
+  }
+  grid.innerHTML = cardsHtml;
+
+  setTimeout(initThumbnails, 100);
+}
+
+function setPlanWeek(offset) {
+  currentPlanWeekOffset = offset;
+  renderWeek();
+}
+
+// Shared meal card renderer used by Plan and Meals pages
+function renderMealCard(r, opts) {
+  opts = opts || {};
+  let clickHandler;
+  if (r.source === 'custom') {
+    clickHandler = "openCustomRecipe('" + r.id.replace(/'/g,"\\'") + "')";
+  } else if (r.source === 'inline') {
+    clickHandler = 'openRecipe(' + r.mealId + ')';
+  } else {
+    clickHandler = "openPdfRecipe('" + r.path.replace(/'/g,"\\'") + "', '" + r.name.replace(/'/g,"\\'") + "')";
+  }
+  const existingImage = getRecipeImage(r.id, r.path);
+  let thumbContent;
+  if (existingImage) {
+    thumbContent = '<div class="meal-card-thumb"><img src="' + existingImage + '" style="width:100%;height:100%;object-fit:cover"></div>';
+  } else if (r.source === 'pdf') {
+    thumbContent = '<div class="meal-card-thumb" data-pdf-path="' + r.path + '" data-recipe-id="' + r.id + '"></div>';
+  } else {
+    thumbContent = '<div class="meal-card-thumb" style="background:linear-gradient(135deg,#f0f5e8,#e0ead4)"></div>';
+  }
+  const metaParts = [];
+  if (opts.dayLabel) metaParts.push('<strong style="color:var(--text)">' + opts.dayLabel + '</strong>');
+  if (r.cookTime) metaParts.push(r.cookTime);
+  const miniStars = renderMiniStars(r.id);
+  if (miniStars) metaParts.push(miniStars);
+  const isHF = isRecipeHellofresh(r.id);
+  let badge = '';
+  if (isHF) badge = '<div class="hf-badge">' + HF_BADGE_SVG + '</div>';
+  else if (r.source === 'custom') badge = '<div class="hf-badge text-only">Custom</div>';
+  const todayClass = opts.isToday ? ' today-card' : '';
+  return '<div class="meal-card' + todayClass + '" onclick="' + clickHandler + '">' +
+    badge +
+    thumbContent +
+    '<div class="meal-card-body">' +
+      '<div class="meal-card-title">' + r.name + '</div>' +
+      '<div class="meal-card-meta">' + metaParts.join(' · ') + '</div>' +
+    '</div>' +
+  '</div>';
 }
 
 function renderPdfCards(recipes) {
@@ -3542,47 +3648,9 @@ function renderMeals() {
     return true;
   });
 
-  // Render grid - uniform cards for all recipes
+  // Render grid - uniform cards using shared renderer
   const grid = document.getElementById('meals-grid');
-  grid.innerHTML = recipes.map(r => {
-    let clickHandler;
-    if (r.source === 'custom') {
-      clickHandler = `openCustomRecipe('${r.id.replace(/'/g,"\\'")}')`;
-    } else if (r.source === 'inline') {
-      clickHandler = `openRecipe(${r.mealId})`;
-    } else {
-      clickHandler = `openPdfRecipe('${r.path.replace(/'/g,"\\'")}', '${r.name.replace(/'/g,"\\'")}')`;
-    }
-    const existingImage = getRecipeImage(r.id, r.path);
-    let thumbContent;
-    if (existingImage) {
-      thumbContent = `<div class="meal-card-thumb"><img src="${existingImage}" style="width:100%;height:100%;object-fit:cover"></div>`;
-    } else if (r.source === 'pdf') {
-      thumbContent = `<div class="meal-card-thumb" data-pdf-path="${r.path}" data-recipe-id="${r.id}"></div>`;
-    } else {
-      thumbContent = `<div class="meal-card-thumb" style="background:linear-gradient(135deg,#f0f5e8,#e0ead4)"></div>`;
-    }
-    const metaParts = [];
-    if (r.cookTime) metaParts.push(r.cookTime);
-    const miniStars = renderMiniStars(r.id);
-    if (miniStars) metaParts.push(miniStars);
-    const isHF = isRecipeHellofresh(r.id);
-    let badge = '';
-    if (isHF) badge = `<span class="hf-badge">${r.category === 'special' ? 'Special' : 'HF'}</span>`;
-    else if (r.source === 'custom') badge = '<span class="custom-badge">Custom</span>';
-    return `
-      <div class="meal-card" onclick="${clickHandler}">
-        ${thumbContent}
-        <div class="meal-card-body">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div class="meal-card-title">${r.name}</div>
-            ${badge}
-          </div>
-          <div class="meal-card-meta">${metaParts.join(' · ')}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
+  grid.innerHTML = recipes.map(r => renderMealCard(r)).join('');
 
   // Re-init thumbnails for newly rendered cards
   setTimeout(initThumbnails, 100);
