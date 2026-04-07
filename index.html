@@ -1454,7 +1454,19 @@ nav { padding: 12px 16px; }
   display: flex;
   gap: 12px;
   margin-top: 24px;
-  justify-content: flex-end;
+  align-items: center;
+}
+
+.editor-delete-link {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 4px 0;
+  margin-left: auto;
 }
 
 .editor-save {
@@ -4510,12 +4522,10 @@ function renderRecipeEditor(data) {
       '<div id="editor-steps">' + stepsHtml + '</div>' +
       '<button class="editor-add-btn" onclick="addEditorStep()" type="button">+ Add Step</button>' +
     '</div>' +
-    (editorRecipeId ? '<div style="border-top:1px solid var(--border);margin-top:24px;padding-top:16px">' +
-      '<button type="button" style="background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;text-decoration:underline" onclick="confirmDeleteRecipe()">Delete this recipe</button>' +
-    '</div>' : '') +
     '<div class="editor-actions">' +
-      '<button class="editor-cancel" onclick="closeModal()" type="button">Cancel</button>' +
       '<button class="editor-save" onclick="saveRecipe()" type="button">Save Recipe</button>' +
+      '<button class="editor-cancel" onclick="closeModal()" type="button">Cancel</button>' +
+      (editorRecipeId ? '<button type="button" class="editor-delete-link" onclick="confirmDeleteRecipe()">Delete this recipe</button>' : '') +
     '</div>' +
   '</div>';
 
