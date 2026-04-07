@@ -3316,14 +3316,61 @@ function getDateSeed(date) {
   return date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
 }
 
-function getDinnerForDate(date) {
+function getRecipeMinutes(r) {
+  if (r._totalMinutes) return r._totalMinutes;
+  if (r.cookTime) {
+    const m = String(r.cookTime).match(/(\d+)/);
+    if (m) return parseInt(m[1]);
+  }
+  // HF data fallback
+  if (HF_RECIPE_DATA[r.name]) return HF_RECIPE_DATA[r.name].totalTime || null;
+  return null;
+}
+
+function isCrockpotRecipe(r) {
+  const n = r.name.toLowerCase();
+  return n.includes('crockpot') || n.includes('crock pot') || n.includes('slow cooker');
+}
+
+function buildPoolForDate(date) {
   const status = getKidStatus(date);
-  const pool = RECIPE_REGISTRY.filter(r => {
+  const day = date.getDay(); // 0=Sun
+  return RECIPE_REGISTRY.filter(r => {
     if (ratingsCache[r.id]?.is_deleted) return false;
     const effectiveType = ratingsCache[r.id]?.meal_type || r.mealType;
-    if (status === 'kids') return effectiveType === 'kids' || effectiveType === 'both';
-    return effectiveType === 'solo' || effectiveType === 'both';
+    if (status === 'kids') {
+      if (!(effectiveType === 'kids' || effectiveType === 'both')) return false;
+    } else {
+      if (!(effectiveType === 'solo' || effectiveType === 'both')) return false;
+    }
+    // Wednesday family meals MUST be ≤25 min total time (non-negotiable)
+    if (day === 3 && status === 'kids') {
+      const mins = getRecipeMinutes(r);
+      if (mins === null || mins > 25) return false;
+    }
+    return true;
   });
+}
+
+function getDinnerForDate(date) {
+  const day = date.getDay();
+  const status = getKidStatus(date);
+  let pool = buildPoolForDate(date);
+  if (pool.length === 0) return null;
+
+  // Sunday family days: dinner is an afterthought, swap with lunch (handled in getMealSchedule)
+  // Sunday solo days: normal selection
+
+  // Weight crockpot recipes heavily on Sundays (and exclude on other days)
+  const crockpotInPool = pool.filter(isCrockpotRecipe);
+  const nonCrockpot = pool.filter(r => !isCrockpotRecipe(r));
+  if (day === 0 && crockpotInPool.length > 0) {
+    // Sunday: prefer crockpot - put it 5x in the pool
+    pool = nonCrockpot.concat(crockpotInPool, crockpotInPool, crockpotInPool, crockpotInPool, crockpotInPool);
+  } else {
+    // Non-Sunday: exclude crockpot
+    pool = nonCrockpot;
+  }
   if (pool.length === 0) return null;
 
   // Get recent meals to avoid repeats
@@ -3332,13 +3379,7 @@ function getDinnerForDate(date) {
     const prev = new Date(date);
     prev.setDate(prev.getDate() - d);
     const prevRng = mulberry32(getDateSeed(prev));
-    const prevPool = RECIPE_REGISTRY.filter(r => {
-      if (ratingsCache[r.id]?.is_deleted) return false;
-      const prevStatus = getKidStatus(prev);
-      const et = ratingsCache[r.id]?.meal_type || r.mealType;
-      if (prevStatus === 'kids') return et === 'kids' || et === 'both';
-      return et === 'solo' || et === 'both';
-    });
+    const prevPool = buildPoolForDate(prev);
     if (prevPool.length > 0) {
       const prevIdx = Math.floor(prevRng() * prevPool.length);
       if (prevPool[prevIdx]) recent.push(prevPool[prevIdx].id);
@@ -3354,6 +3395,21 @@ function getDinnerForDate(date) {
   return available[idx];
 }
 
+// Sunday family lunch: pick a "main" recipe (the prepared meal of the day)
+function getSundayLunchForDate(date) {
+  // Use a different seed so it's a different selection from dinner
+  const day = date.getDay();
+  const status = getKidStatus(date);
+  if (day !== 0 || status !== 'kids') return null;
+  let pool = buildPoolForDate(date);
+  // Crockpot is handled at dinner slot for solo, but on family Sundays we want
+  // a more involved meal at lunch. Skip crockpot here.
+  pool = pool.filter(r => !isCrockpotRecipe(r));
+  if (pool.length === 0) return null;
+  const rng = mulberry32(getDateSeed(date) + 1); // offset seed
+  return pool[Math.floor(rng() * pool.length)];
+}
+
 // Daily meal schedule
 function getMealSchedule(date) {
   const day = date.getDay();
@@ -3362,7 +3418,7 @@ function getMealSchedule(date) {
   const base = [
     { time: '9:00 AM',  name: 'Breakfast', detail: '3 eggs + ¼ cup cheese', mealId: null },
     { time: '11:30 AM', name: 'Snack',     detail: 'Oikos yogurt or almonds', mealId: null },
-    { time: '1:30 PM',  name: 'Lunch',     detail: 'Chicken + greens', mealId: null },
+    { time: '1:30 PM',  name: 'Lunch',     detail: 'Chicken + greens', mealId: null, recipeId: null },
     { time: '4:00 PM',  name: 'Snack',     detail: 'Oikos yogurt or almonds', mealId: null },
     { time: '6:30 PM',  name: 'Dinner',    detail: '', mealId: null, recipeId: null },
     { time: '8:00 PM',  name: 'Kitchen Closed', detail: '', mealId: null, closed: true }
@@ -3370,6 +3426,19 @@ function getMealSchedule(date) {
 
   if (day === 2) {
     base[2].detail = 'Staff lunch out — eat smart';
+  }
+
+  // Sunday family days: lunch is the main prepared meal, dinner is an afterthought
+  if (day === 0 && status === 'kids') {
+    const lunchRecipe = getSundayLunchForDate(date);
+    if (lunchRecipe) {
+      base[2].detail = lunchRecipe.name;
+      base[2].recipeId = lunchRecipe.id;
+      if (lunchRecipe.source === 'inline') base[2].mealId = lunchRecipe.mealId;
+    }
+    base[4].detail = 'Leftovers / quick bite';
+    base[4].note = 'Family Sunday — easy night';
+    return base;
   }
 
   const recipe = getDinnerForDate(date);
