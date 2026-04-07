@@ -255,6 +255,18 @@ transition: none;
 
 .timeline-row:last-child { border-bottom: none; }
 
+.timeline-row.current {
+background: #f0f9eb;
+border-radius: 12px;
+padding: 16px 20px;
+border-bottom: 1px solid transparent;
+margin: 4px 0;
+}
+
+.timeline-row.current + .timeline-row {
+border-top: none;
+}
+
 .timeline-row.current .timeline-time {
 color: var(--accent);
 font-weight: 700;
@@ -263,6 +275,10 @@ font-weight: 700;
 .timeline-row.current .timeline-meal {
 font-weight: 700;
 color: var(--text);
+}
+
+.timeline-row.current.closed {
+background: #fef2f2;
 }
 
 .timeline-row.current.closed .timeline-time { color: var(--danger); }
