@@ -1130,32 +1130,35 @@ line-height: 1.6;
   align-items: center;
 }
 
-.filter-chip {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  padding: 12px 24px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.filter-chip:hover { border-color: var(--accent); }
-.filter-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
-
+.filter-chip,
 .filter-select {
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
   font-family: 'DM Sans', sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
-  padding: 12px 24px;
+  height: 40px;
+  padding: 0 18px;
+  line-height: 38px;
   border-radius: 999px;
   cursor: pointer;
+  transition: all 0.15s;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+}
+
+.filter-chip:hover,
+.filter-select:hover { border-color: var(--accent); }
+.filter-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+.filter-select {
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path fill='%23666' d='M3 4.5l3 3 3-3'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
 }
 
 .mini-stars {
