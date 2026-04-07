@@ -258,6 +258,7 @@ transition: none;
 
 .timeline-row.current {
 position: relative;
+isolation: isolate;
 border-bottom: 1px solid transparent;
 }
 
@@ -271,6 +272,7 @@ transform: translateX(-50%);
 width: 100vw;
 background: rgba(188, 234, 163, 0.5);
 z-index: -1;
+pointer-events: none;
 }
 
 .timeline-row.current + .timeline-row {
