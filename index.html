@@ -1272,20 +1272,16 @@ async function extractRecipeImage(path) {
   } catch(e) { return null; }
 }
 
-function generatePlaceholderImage(emoji) {
+function generatePlaceholderImage() {
   const canvas = document.createElement('canvas');
   canvas.width = 300;
   canvas.height = 180;
   const ctx = canvas.getContext('2d');
   const gradient = ctx.createLinearGradient(0, 0, 300, 180);
-  gradient.addColorStop(0, '#e8f5e0');
-  gradient.addColorStop(1, '#c5e1a5');
+  gradient.addColorStop(0, '#f0f5e8');
+  gradient.addColorStop(1, '#e0ead4');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 300, 180);
-  ctx.font = '64px serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(emoji || '🍽️', 150, 90);
   return canvas.toDataURL('image/jpeg', 0.7);
 }
 
@@ -3338,10 +3334,6 @@ function renderStarRating(recipeId) {
     <div class="rating-section">
       <div class="star-rating">${[1,2,3,4,5].map(i => starSvg(i)).join('')}</div>
       ${renderMealTypeToggle(recipeId)}
-      <label class="hf-toggle">
-        <input type="checkbox" ${isHF ? 'checked' : ''} onchange="event.stopPropagation(); toggleHellofresh('${recipeId}', this.checked)">
-        <span>HelloFresh</span>
-      </label>
       <button class="btn-favorite ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('${recipeId}')">${isFav ? '★ Favorite' : '☆ Favorite'}</button>
     </div>
     <div style="margin-top:4px">
@@ -3501,7 +3493,7 @@ function renderMeals() {
     } else if (r.source === 'pdf') {
       thumbContent = `<div class="meal-card-thumb" data-pdf-path="${r.path}" data-recipe-id="${r.id}"></div>`;
     } else {
-      thumbContent = `<div class="meal-card-thumb"><div class="placeholder-img">${r.emoji || '🍽️'}</div></div>`;
+      thumbContent = `<div class="meal-card-thumb" style="background:linear-gradient(135deg,#f0f5e8,#e0ead4)"></div>`;
     }
     const metaParts = [];
     if (r.cookTime) metaParts.push(r.cookTime);
@@ -3864,7 +3856,7 @@ let editorRecipeId = null;
 
 function openRecipeEditor(recipeId) {
   editorRecipeId = recipeId || null;
-  var data = { name: '', prepTime: '', totalTime: '', calories: '', protein: 'chicken', mealType: 'both', ingredients: [{ amount: '', item: '' }], steps: [''] };
+  var data = { name: '', prepTime: '', totalTime: '', calories: '', protein: 'chicken', mealType: 'both', isHellofresh: false, ingredients: [{ amount: '', item: '' }], steps: [''] };
 
   if (recipeId) {
     var custom = customRecipes.find(function(r) { return r.id === recipeId; });
@@ -3876,6 +3868,7 @@ function openRecipeEditor(recipeId) {
         calories: custom.calories || '',
         protein: custom.protein || 'other',
         mealType: custom.meal_type || 'both',
+        isHellofresh: isRecipeHellofresh(recipeId),
         ingredients: (custom.ingredients && custom.ingredients.length > 0) ? custom.ingredients : [{ amount: '', item: '' }],
         steps: (custom.steps && custom.steps.length > 0) ? custom.steps : ['']
       };
@@ -3891,6 +3884,7 @@ function openRecipeEditor(recipeId) {
             calories: '',
             protein: reg.protein,
             mealType: meal.type,
+            isHellofresh: isRecipeHellofresh(recipeId),
             ingredients: meal.ingredients.map(function(i) { return { amount: i.amount, item: i.item }; }),
             steps: meal.steps.slice()
           };
@@ -3905,6 +3899,7 @@ function openRecipeEditor(recipeId) {
             calories: hfData.calories || '',
             protein: reg.protein,
             mealType: reg.mealType,
+            isHellofresh: true,
             ingredients: hfData.ingredients.map(function(i) { return { amount: i.amount, item: i.item }; }),
             steps: hfData.steps.slice()
           };
@@ -3978,6 +3973,12 @@ function renderRecipeEditor(data) {
           '<option value="kids"' + (data.mealType === 'kids' ? ' selected' : '') + '>Family</option>' +
           '<option value="both"' + (data.mealType === 'both' ? ' selected' : '') + '>Both</option>' +
         '</select>' +
+      '</div>' +
+      '<div class="editor-field">' +
+        '<label class="hf-toggle" style="margin-left:0">' +
+          '<input type="checkbox" id="editor-hellofresh"' + (data.isHellofresh ? ' checked' : '') + '>' +
+          '<span>HelloFresh Recipe</span>' +
+        '</label>' +
       '</div>' +
     '</div>' +
     '<div class="editor-field"><label>Ingredients</label>' +
@@ -4156,6 +4157,13 @@ async function saveRecipe() {
   var editorImg = document.getElementById('editor-image-img');
   if (editorImg && editorImg.dataset.newImage) {
     saveRecipeImage(id, editorImg.dataset.newImage);
+  }
+
+  // Save HelloFresh setting
+  var hfCheckbox = document.getElementById('editor-hellofresh');
+  if (hfCheckbox) {
+    var current = ratingsCache[id] || {};
+    saveRating(id, current.stars || 0, current.is_favorite || false, current.is_deleted || false, row.meal_type, hfCheckbox.checked);
   }
 
   // Close modal and re-render
