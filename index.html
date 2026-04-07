@@ -4422,8 +4422,7 @@ function openRecipeEditor(recipeId) {
 
 function renderRecipeEditor(data) {
   document.getElementById('modal-title').textContent = editorRecipeId ? 'Edit Recipe' : 'New Recipe';
-  document.getElementById('modal-eyebrow-text').textContent = editorRecipeId ? 'Edit' : 'Create';
-  document.getElementById('modal-eyebrow-text').style.display = '';
+  document.getElementById('modal-eyebrow-text').style.display = 'none';
   // Hide all the recipe-view elements (header image, subtitle, heart, footer)
   document.getElementById('modal-header-img').innerHTML = '';
   document.getElementById('modal-subtitle-row').innerHTML = '';
