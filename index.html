@@ -4105,8 +4105,15 @@ function setupRecipeModal(recipeId, name, opts) {
   const isHF = isRecipeHellofresh(recipeId);
   let showFooter = false;
 
-  if (opts.pdfPath && isHF) {
-    pdfLink.href = encodeURI(opts.pdfPath);
+  // Resolve PDF path: prefer opts, fall back to looking up by name in PDF_RECIPES/SPECIAL_RECIPES
+  let pdfPath = opts.pdfPath;
+  if (!pdfPath && isHF) {
+    const match = [...PDF_RECIPES, ...SPECIAL_RECIPES].find(p => p.name === name);
+    if (match) pdfPath = match.path;
+  }
+
+  if (pdfPath && isHF) {
+    pdfLink.href = encodeURI(pdfPath);
     pdfLink.style.display = '';
     showFooter = true;
   } else {
