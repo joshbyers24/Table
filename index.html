@@ -1090,6 +1090,14 @@ flex: 1;
 
 @media (max-width: 600px) {
   .modal-ingredients-grid { grid-template-columns: 1fr; }
+  .modal-ingredient { flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 0; }
+  .ing-amount { min-width: 0; font-size: 14px; }
+  .modal-overlay { padding: 8px; }
+  .modal { border-radius: 16px; }
+  .modal-inner { padding: 20px 20px 24px; }
+  #modal-header-img { height: 220px; border-top-left-radius: 16px; border-top-right-radius: 16px; }
+  .modal-footer { flex-direction: column; gap: 10px; }
+  .modal-action-btn { width: 100%; padding: 14px 20px; font-size: 14px; }
 }
 
 /* WEEK HEADER */
@@ -1354,9 +1362,99 @@ flex: 1;
 
 .mini-stars .mini-star.filled { fill: var(--favorite); }
 
+/* MOBILE HAMBURGER NAV */
+.nav-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  width: 44px;
+  height: 44px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+}
+
+.nav-hamburger span {
+  display: block;
+  width: 28px;
+  height: 3px;
+  background: var(--text);
+  border-radius: 2px;
+}
+
+.mobile-nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--black);
+  z-index: 200;
+}
+
+.mobile-nav-overlay.open { display: flex; align-items: center; justify-content: center; }
+
+.mobile-nav-content {
+  text-align: center;
+  position: relative;
+  width: 100%;
+}
+
+.mobile-nav-close {
+  position: absolute;
+  top: -200px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 48px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.mobile-nav-item {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 20px 0;
+  font-family: 'Lilita One', sans-serif;
+  font-size: 36px;
+  color: var(--text);
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.mobile-nav-item:hover,
+.mobile-nav-item.active { color: var(--accent); }
+
+/* SHOPPING COLLAPSIBLE */
+.shopping-cat-title {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 32px;
+}
+
+.shopping-cat-title::after {
+  content: '▾';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+
+.shopping-cat.collapsed .shopping-cat-title::after {
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+.shopping-cat.collapsed .shopping-cat-items { display: none; }
+
 /* RESPONSIVE - TABLET */
 @media (max-width: 768px) {
-nav { padding: 16px 20px; gap: 16px; }
+nav { padding: 12px 20px; gap: 16px; justify-content: space-between; }
 .page { padding: 20px; }
 .today-hero { grid-template-columns: 1fr; }
 .month-day { height: 80px; padding: 6px; }
@@ -1364,12 +1462,26 @@ nav { padding: 16px 20px; gap: 16px; }
 .month-day-meal { font-size: 9px; }
 .meals-grid { grid-template-columns: 1fr 1fr; }
 .shopping-categories { grid-template-columns: 1fr; }
-.nav-logo { height: 70px; }
-.nav-logo svg { height: 70px; }
-.nav-tab { padding: 6px 10px; font-size: 20px; }
+.nav-logo { height: 60px; }
+.nav-logo svg { height: 60px; }
+.nav-tabs { display: none; }
+.nav-hamburger { display: flex; }
 .hero-card.accent-card .dinner-name { font-size: 32px; }
 .hero-card.accent-card .dinner-meta { font-size: 14px; }
 .view-recipe-btn { font-size: 16px; padding: 12px 24px; }
+.timeline-row { flex-wrap: wrap; align-items: flex-start; }
+.timeline-meal { flex: 1 1 auto; order: 2; }
+.timeline-detail { flex: 1 0 100%; order: 3; margin-left: 96px; text-align: left; font-size: 13px; margin-top: 2px; }
+.timeline-time { order: 1; }
+.week-nav-tab .week-tab-label { font-size: 10px; margin-bottom: 2px; }
+.week-nav-tab .week-tab-dates { font-size: 16px; }
+.week-nav-tab { padding: 10px 8px; }
+.week-nav-wrapper { gap: 8px; }
+#page-meals .section-label { font-size: 20px !important; }
+#page-meals .view-recipe-btn { font-size: 12px !important; padding: 8px 14px !important; }
+.filter-bar { gap: 6px; margin-bottom: 20px; }
+.filter-chip, .filter-select { font-size: 12px; height: 32px; padding: 0 12px; line-height: 30px; }
+.filter-select { padding-right: 28px; }
 }
 
 /* RESPONSIVE - IPHONE 13 MINI */
@@ -1377,8 +1489,6 @@ nav { padding: 16px 20px; gap: 16px; }
 nav { padding: 12px 16px; }
 .nav-logo { height: 50px; }
 .nav-logo svg { height: 50px; }
-.nav-tabs { gap: 2px; }
-.nav-tab { padding: 5px 7px; font-size: 14px; }
 .hero-card.accent-card .dinner-name { font-size: 26px; }
 .hero-card.accent-card .card-eyebrow { font-size: 14px; }
 .hero-card.accent-card .dinner-meta { font-size: 13px; }
@@ -1626,7 +1736,20 @@ nav { padding: 12px 16px; }
     <button class="nav-tab" data-page="meals" onclick="showPage('meals')">Meals</button>
     <button class="nav-tab" data-page="shopping" onclick="showPage('shopping')">Shopping</button>
   </div>
+  <button class="nav-hamburger" onclick="toggleMobileNav()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
+
+<div class="mobile-nav-overlay" id="mobile-nav-overlay" onclick="closeMobileNavIfBackdrop(event)">
+  <div class="mobile-nav-content">
+    <button class="mobile-nav-close" onclick="toggleMobileNav()">×</button>
+    <button class="mobile-nav-item" onclick="navigateMobile('today')">Today</button>
+    <button class="mobile-nav-item" onclick="navigateMobile('week')">The Plan</button>
+    <button class="mobile-nav-item" onclick="navigateMobile('meals')">Meals</button>
+    <button class="mobile-nav-item" onclick="navigateMobile('shopping')">Shopping</button>
+  </div>
+</div>
 
 <!-- TODAY PAGE -->
 
@@ -3683,9 +3806,57 @@ function showPage(id) {
   const tab = document.querySelector('.nav-tab[data-page="' + id + '"]');
   if (tab) tab.classList.add('active');
   if (id === 'today') { currentViewDate = new Date(); renderToday(); }
+  if (id === 'week') { renderWeek(); }
   if (id === 'meals') { setTimeout(initThumbnails, 100); }
   window.scrollTo(0, 0);
 }
+
+function isMobile() { return window.innerWidth < 768; }
+
+function toggleMobileNav() {
+  document.getElementById('mobile-nav-overlay').classList.toggle('open');
+}
+
+function closeMobileNavIfBackdrop(event) {
+  if (event.target.id === 'mobile-nav-overlay') toggleMobileNav();
+}
+
+function navigateMobile(page) {
+  toggleMobileNav();
+  showPage(page);
+}
+
+function toggleShoppingCat(slug) {
+  const cat = document.getElementById('cat-' + slug);
+  if (!cat) return;
+  cat.classList.toggle('collapsed');
+  const collapsed = JSON.parse(localStorage.getItem('collapsedCats') || '[]');
+  const idx = collapsed.indexOf(slug);
+  if (cat.classList.contains('collapsed')) {
+    if (idx === -1) collapsed.push(slug);
+  } else {
+    if (idx !== -1) collapsed.splice(idx, 1);
+  }
+  localStorage.setItem('collapsedCats', JSON.stringify(collapsed));
+}
+
+function slugify(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+
+function applyCollapsedShoppingCats() {
+  const collapsed = JSON.parse(localStorage.getItem('collapsedCats') || '[]');
+  collapsed.forEach(slug => {
+    const el = document.getElementById('cat-' + slug);
+    if (el) el.classList.add('collapsed');
+  });
+}
+
+let _resizeTimer;
+window.addEventListener('resize', function() {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    if (document.getElementById('page-week').classList.contains('active')) renderWeek();
+  }, 150);
+});
 
 function getCurrentMealIndex(schedule) {
   const now = new Date();
@@ -3752,7 +3923,8 @@ let currentPlanWeekOffset = 0;
 let planWeekBlockOffset = 0;
 
 function navigatePlanWeeks(delta) {
-  planWeekBlockOffset += delta * 6;
+  const weekCount = isMobile() ? 3 : 6;
+  planWeekBlockOffset += delta * weekCount;
   currentPlanWeekOffset = planWeekBlockOffset;
   renderWeek();
 }
@@ -3770,10 +3942,11 @@ function renderWeek() {
   today.setHours(0,0,0,0);
   const todaySunday = getSundayOfWeek(today);
 
-  // Render 6 week tabs based on current block offset
+  // Render week tabs based on current block offset (3 on mobile, 6 on desktop)
   const tabsContainer = document.getElementById('week-nav-tabs');
+  const weekCount = isMobile() ? 3 : 6;
   let tabsHtml = '';
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < weekCount; i++) {
     const offset = planWeekBlockOffset + i;
     const weekStart = new Date(todaySunday);
     weekStart.setDate(weekStart.getDate() + (offset * 7));
@@ -4336,25 +4509,32 @@ async function renderShopping() {
   const regularCats = Object.entries(list).filter(([k]) => k !== '_hfMeals');
 
   const container = document.getElementById('shopping-list');
-  let html = regularCats.map(([cat, items]) => `
-    <div class="shopping-cat">
-      <div class="shopping-cat-title">${cat}</div>
+  let html = regularCats.map(([cat, items]) => {
+    const slug = slugify(cat);
+    return `
+    <div class="shopping-cat" id="cat-${slug}">
+      <div class="shopping-cat-title" onclick="toggleShoppingCat('${slug}')">${cat}</div>
+      <div class="shopping-cat-items">
       ${items.map(item => `
         <div class="shopping-item ${checkedItems[item] ? 'checked' : ''}" onclick="toggleCheck(this, '${item.replace(/'/g,"\\'")}')">
           <div class="shop-check"></div>
           <span class="shop-text">${item}</span>
         </div>
       `).join('')}
+      </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   // Split HF meals: ones with structured data vs PDF-only
   const hfWithData = hfMeals.filter(m => m.hasData);
   const hfPdfOnly = hfMeals.filter(m => !m.hasData);
 
   if (hfWithData.length > 0) {
-    html += `<div class="shopping-cat">
-      <div class="shopping-cat-title">HelloFresh Meals</div>
+    const slug = 'hellofresh-meals';
+    html += `<div class="shopping-cat" id="cat-${slug}">
+      <div class="shopping-cat-title" onclick="toggleShoppingCat('${slug}')">HelloFresh Meals</div>
+      <div class="shopping-cat-items">
       ${hfWithData.map(m => {
         return `<div style="margin-bottom:12px">
           <div style="font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;margin-top:12px">${m.name} (${m.day})</div>
@@ -4367,12 +4547,15 @@ async function renderShopping() {
           }).join('')}
         </div>`;
       }).join('')}
+      </div>
     </div>`;
   }
 
   if (hfPdfOnly.length > 0) {
-    html += `<div class="shopping-cat">
-      <div class="shopping-cat-title">HelloFresh Meals (PDF)</div>
+    const slug = 'hellofresh-meals-pdf';
+    html += `<div class="shopping-cat" id="cat-${slug}">
+      <div class="shopping-cat-title" onclick="toggleShoppingCat('${slug}')">HelloFresh Meals (PDF)</div>
+      <div class="shopping-cat-items">
       ${hfPdfOnly.map(m => `
         <div style="margin-bottom:12px">
           <div style="font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;margin-top:12px">${m.name} (${m.day})</div>
@@ -4381,10 +4564,12 @@ async function renderShopping() {
           </div>
         </div>
       `).join('')}
+      </div>
     </div>`;
   }
 
   container.innerHTML = html;
+  applyCollapsedShoppingCats();
 
   // Lazy load HF ingredients only for PDF-only meals
   if (hfPdfOnly.length > 0) {
@@ -4942,23 +5127,30 @@ function renderShoppingFallback() {
   const hfMeals = list._hfMeals || [];
   const regularCats = Object.entries(list).filter(([k]) => k !== '_hfMeals');
   const container = document.getElementById('shopping-list');
-  let html = regularCats.map(([cat, items]) => `
-    <div class="shopping-cat">
-      <div class="shopping-cat-title">${cat}</div>
+  let html = regularCats.map(([cat, items]) => {
+    const slug = slugify(cat);
+    return `
+    <div class="shopping-cat" id="cat-${slug}">
+      <div class="shopping-cat-title" onclick="toggleShoppingCat('${slug}')">${cat}</div>
+      <div class="shopping-cat-items">
       ${items.map(item => `
         <div class="shopping-item ${saved[item] ? 'checked' : ''}" onclick="toggleCheck(this, '${item.replace(/'/g,"\\'")}')">
           <div class="shop-check"></div>
           <span class="shop-text">${item}</span>
         </div>
       `).join('')}
+      </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
   if (hfMeals.length > 0) {
     const hfWithData = hfMeals.filter(m => m.hasData);
     const hfPdfOnly = hfMeals.filter(m => !m.hasData);
     if (hfWithData.length > 0) {
-      html += `<div class="shopping-cat">
-        <div class="shopping-cat-title">HelloFresh Meals</div>
+      const slug = 'hellofresh-meals';
+      html += `<div class="shopping-cat" id="cat-${slug}">
+        <div class="shopping-cat-title" onclick="toggleShoppingCat('${slug}')">HelloFresh Meals</div>
+        <div class="shopping-cat-items">
         ${hfWithData.map(m => {
           const hfData = HF_RECIPE_DATA[m.name];
           return `<div style="margin-bottom:12px">
@@ -4972,18 +5164,23 @@ function renderShoppingFallback() {
             }).join('')}
           </div>`;
         }).join('')}
+        </div>
       </div>`;
     }
     if (hfPdfOnly.length > 0) {
-      html += `<div class="shopping-cat">
-        <div class="shopping-cat-title">HelloFresh Meals (PDF)</div>
+      const slug = 'hellofresh-meals-pdf';
+      html += `<div class="shopping-cat" id="cat-${slug}">
+        <div class="shopping-cat-title" onclick="toggleShoppingCat('${slug}')">HelloFresh Meals (PDF)</div>
+        <div class="shopping-cat-items">
         ${hfPdfOnly.map(m => `
           <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:8px">${m.name} (${m.day})</div>
         `).join('')}
+        </div>
       </div>`;
     }
   }
   container.innerHTML = html;
+  applyCollapsedShoppingCats();
 }
 
 </script>
