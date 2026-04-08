@@ -60,8 +60,10 @@
     if (!big){ target.innerHTML = '<div class="err">Could not find schedule script</div>'; return; }
     big = big.replace(/^<script>/,'').replace(/<\/script>$/,'');
 
+    // Stub out browser-only deps the app expects but we don't need
+    var stub = 'window.supabase = window.supabase || { createClient: function(){ var noop = function(){ return { then: function(cb){ cb({data:[]}); return { catch: function(){} }; }, catch: function(){} }; }; var chain = { select: noop, upsert: noop, from: function(){ return chain; } }; return chain; } };\n';
     var s = document.createElement('script');
-    s.textContent = big + '\nwindow.getMealSchedule = getMealSchedule; window.getCurrentMealIndex = getCurrentMealIndex;';
+    s.textContent = stub + big + '\nwindow.getMealSchedule = getMealSchedule; window.getCurrentMealIndex = getCurrentMealIndex;';
     document.head.appendChild(s);
 
     render();
