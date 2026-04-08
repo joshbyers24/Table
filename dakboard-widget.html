@@ -1,0 +1,74 @@
+<!-- Paste this entire block into a Dakboard HTML/JavaScript widget. -->
+<style>
+  #table-dakboard{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:#f5f5f5;background:#000;padding:8px 4px;
+  }
+  #table-dakboard .row{
+    display:flex;align-items:baseline;gap:14px;
+    padding:10px 12px;margin:6px 0;
+    background:#0d0d0d;border:1px solid #262626;border-radius:8px;
+    position:relative;
+  }
+  #table-dakboard .row.current{background:rgba(188,234,163,0.12);}
+  #table-dakboard .row.current::before{
+    content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;
+    background:#bceaa3;border-radius:3px;
+  }
+  #table-dakboard .row.current .time{color:#bceaa3;}
+  #table-dakboard .row.closed{opacity:.55;}
+  #table-dakboard .time{
+    color:#9a9a9a;font-size:13px;font-weight:600;
+    min-width:72px;letter-spacing:.3px;
+  }
+  #table-dakboard .meal{color:#f5f5f5;font-size:15px;font-weight:600;min-width:110px;}
+  #table-dakboard .detail{color:#cfcfcf;font-size:14px;flex:1;}
+  #table-dakboard .err{color:#888;font-size:12px;padding:8px;}
+</style>
+
+<div id="table-dakboard"><div class="err">Loading…</div></div>
+
+<script>
+(function(){
+  var SRC = 'https://table-dakboard.vercel.app/index.html';
+  var target = document.getElementById('table-dakboard');
+
+  function render(){
+    try{
+      var schedule = window.getMealSchedule(new Date());
+      var idx = window.getCurrentMealIndex(schedule);
+      target.innerHTML = schedule.map(function(m, i){
+        var cls = 'row' + (i===idx?' current':'') + (m.closed?' closed':'');
+        return '<div class="'+cls+'">'
+          + '<span class="time">'+m.time+'</span>'
+          + '<span class="meal">'+m.name+'</span>'
+          + '<span class="detail">'+(m.detail||'')+'</span>'
+          + '</div>';
+      }).join('');
+    }catch(e){
+      target.innerHTML = '<div class="err">Render error: '+e.message+'</div>';
+    }
+  }
+
+  fetch(SRC).then(function(r){return r.text();}).then(function(html){
+    // Extract the big inline <script> (the one that defines getMealSchedule)
+    var matches = html.match(/<script>([\s\S]*?)<\/script>/g) || [];
+    var big = '';
+    for (var i=0;i<matches.length;i++){
+      if (matches[i].indexOf('getMealSchedule') !== -1){ big = matches[i]; break; }
+    }
+    if (!big){ target.innerHTML = '<div class="err">Could not find schedule script</div>'; return; }
+    big = big.replace(/^<script>/,'').replace(/<\/script>$/,'');
+
+    var s = document.createElement('script');
+    s.textContent = big + '\nwindow.getMealSchedule = getMealSchedule; window.getCurrentMealIndex = getCurrentMealIndex;';
+    document.head.appendChild(s);
+
+    render();
+    // Refresh every 5 minutes so the "current meal" highlight stays accurate
+    setInterval(render, 5*60*1000);
+  }).catch(function(e){
+    target.innerHTML = '<div class="err">Fetch failed: '+e.message+'</div>';
+  });
+})();
+</script>
