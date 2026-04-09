@@ -4804,6 +4804,68 @@ window.addEventListener('popstate', function(e) {
   }
 });
 
+// Swipe-to-dismiss for recipe modal on mobile
+(function initModalSwipe() {
+  const modal = document.getElementById('modal-content');
+  const overlay = document.getElementById('modal-overlay');
+  if (!modal || !overlay) return;
+  let startX = 0, startY = 0, currentX = 0, currentY = 0;
+  let tracking = false;
+  let startedOnImage = false;
+
+  modal.addEventListener('touchstart', function(e) {
+    if (window.innerWidth >= 768) return;
+    if (!overlay.classList.contains('open')) return;
+    // Don't start a swipe if the touch is on a scrollable area that has scroll offset
+    const inner = document.querySelector('#modal-content .modal-inner');
+    if (inner && inner.contains(e.target) && inner.scrollTop > 0) return;
+    const t = e.touches[0];
+    startX = currentX = t.clientX;
+    startY = currentY = t.clientY;
+    tracking = true;
+    startedOnImage = !!e.target.closest('#modal-header-img');
+    modal.style.transition = 'none';
+  }, { passive: true });
+
+  modal.addEventListener('touchmove', function(e) {
+    if (!tracking) return;
+    const t = e.touches[0];
+    currentX = t.clientX;
+    currentY = t.clientY;
+    const dx = currentX - startX;
+    const dy = currentY - startY;
+    // Only start moving if horizontal or downward swipe is dominant
+    if (Math.abs(dx) > Math.abs(dy) || dy > 0) {
+      modal.style.transform = 'translate(' + dx + 'px, ' + Math.max(0, dy) + 'px)';
+      modal.style.opacity = String(Math.max(0.4, 1 - (Math.abs(dx) + Math.max(0, dy)) / 500));
+    }
+  }, { passive: true });
+
+  modal.addEventListener('touchend', function() {
+    if (!tracking) return;
+    tracking = false;
+    const dx = currentX - startX;
+    const dy = currentY - startY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    modal.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+    if (Math.abs(dx) > 100 || dy > 120 || dist > 150) {
+      // Dismiss
+      modal.style.transform = 'translate(' + (dx > 0 ? 800 : (dx < -50 ? -800 : 0)) + 'px, ' + (dy > 80 ? 800 : 0) + 'px)';
+      modal.style.opacity = '0';
+      setTimeout(function() {
+        closeModal();
+        modal.style.transition = '';
+        modal.style.transform = '';
+        modal.style.opacity = '';
+      }, 180);
+    } else {
+      // Snap back
+      modal.style.transform = '';
+      modal.style.opacity = '';
+    }
+  }, { passive: true });
+})();
+
 // ============================================================
 // RECIPE EDITOR
 // ============================================================
