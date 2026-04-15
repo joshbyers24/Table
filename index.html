@@ -1675,6 +1675,16 @@ nav { padding: 12px 16px; }
   font-size: 14px;
   font-weight: 400;
   cursor: pointer;
+  transition: transform 0.08s ease, filter 0.15s ease, opacity 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.editor-save:hover { filter: brightness(1.08); }
+.editor-save:active { transform: scale(0.96); filter: brightness(0.9); }
+.editor-save:disabled {
+  opacity: 0.65;
+  cursor: wait;
+  transform: none;
 }
 
 .editor-cancel {
@@ -5119,6 +5129,14 @@ async function saveRecipe() {
     return;
   }
 
+  // Immediate visual feedback on the Save button
+  var saveBtn = document.querySelector('.editor-save');
+  var originalLabel = saveBtn ? saveBtn.textContent : 'Save';
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+  }
+
   // Use the original recipe ID when editing, so we replace in place
   // (don't create a duplicate custom-{slug} entry alongside the original)
   var id = editorRecipeId || ('custom-' + slugify(data.name));
@@ -5144,6 +5162,10 @@ async function saveRecipe() {
   } catch(e) {
     console.warn('Save failed:', e);
     alert('Failed to save recipe. Check console.');
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel;
+    }
     return;
   }
 
@@ -5173,30 +5195,37 @@ async function saveRecipe() {
     RECIPE_REGISTRY.push(entry);
   }
 
-  // Save featured image if changed
+  // Grab pending image & HF values before we close the modal (DOM goes away)
   var editorImg = document.getElementById('editor-image-img');
-  if (editorImg && editorImg.dataset.newImage) {
-    try {
-      await saveRecipeImage(id, editorImg.dataset.newImage);
-    } catch(e) {
-      console.warn('Image save failed:', e);
-      alert('Image upload failed — it may be too large. Try a smaller photo.');
-    }
+  var pendingImage = (editorImg && editorImg.dataset.newImage) ? editorImg.dataset.newImage : null;
+  if (editorImg && pendingImage) {
+    // Optimistically cache so re-render shows the new image immediately
+    recipeImageCache[id] = pendingImage;
+    delete editorImg.dataset.newImage;
   }
-
-  // Save HelloFresh setting
   var hfCheckbox = document.getElementById('editor-hellofresh');
-  if (hfCheckbox) {
-    var current = ratingsCache[id] || {};
-    saveRating(id, current.stars || 0, current.is_favorite || false, current.is_deleted || false, row.meal_type, hfCheckbox.checked);
-  }
+  var pendingHF = hfCheckbox ? hfCheckbox.checked : null;
 
-  // Close modal and re-render
+  // Close modal and re-render immediately — the rest happens in the background
   document.getElementById('modal-overlay').classList.remove('open');
   if (history.state && history.state.modal) history.back();
   renderMeals();
   renderToday();
   renderWeek();
+
+  // Background: upload image if changed
+  if (pendingImage) {
+    saveRecipeImage(id, pendingImage).catch(function(e) {
+      console.warn('Image save failed:', e);
+      alert('Image upload failed — it may be too large. Try a smaller photo.');
+    });
+  }
+
+  // Background: save HelloFresh setting
+  if (pendingHF !== null) {
+    var current = ratingsCache[id] || {};
+    saveRating(id, current.stars || 0, current.is_favorite || false, current.is_deleted || false, row.meal_type, pendingHF);
+  }
 }
 
 function editCurrentRecipe() {
