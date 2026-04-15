@@ -946,20 +946,26 @@ line-height: 1.1;
   border: none;
   cursor: pointer;
   padding: 0;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.modal-subtitle-row .favorite-heart {
+  margin-left: auto;
 }
 
 .favorite-heart svg {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   fill: var(--border);
-  transition: fill 0.15s;
+  transition: fill 0.15s, transform 0.1s;
 }
+.favorite-heart:active svg { transform: scale(0.9); }
 
 .favorite-heart.active svg {
   fill: var(--accent);
@@ -1152,9 +1158,9 @@ flex: 1;
   .modal-title-row { gap: 12px; }
   .modal-subtitle-row { flex-wrap: nowrap; gap: 10px; }
   .modal-meal-type { font-size: 14px; white-space: nowrap; flex-shrink: 0; }
-  .star-rating .star { width: 20px; height: 20px; }
+  .star-rating .star-wrap { width: 22px; height: 22px; }
   .favorite-heart { width: 32px; height: 32px; }
-  .favorite-heart svg { width: 26px; height: 26px; }
+  .favorite-heart svg { width: 24px; height: 24px; }
 }
 
 /* WEEK HEADER */
@@ -1286,18 +1292,73 @@ flex: 1;
 .star-rating {
   display: inline-flex;
   gap: 2px;
-  cursor: pointer;
+}
+
+.star-rating .star-wrap {
+  position: relative;
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 0;
 }
 
 .star-rating .star {
-  width: 28px;
-  height: 28px;
+  width: 100%;
+  height: 100%;
   fill: var(--border);
   transition: fill 0.1s;
+  display: block;
 }
 
-.star-rating .star.filled { fill: var(--favorite); }
-.star-rating .star.half { fill: var(--favorite); clip-path: inset(0 50% 0 0); }
+.star-rating .star-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--favorite);
+  display: none;
+  pointer-events: none;
+}
+.star-rating .star-wrap.full .star-fill { display: block; }
+.star-rating .star-wrap.half .star-fill {
+  display: block;
+  clip-path: inset(0 50% 0 0);
+}
+
+.star-rating .star-hit {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.star-rating .star-hit.left { left: 0; }
+.star-rating .star-hit.right { right: 0; }
+
+/* Mini stars (on recipe cards) also support halves */
+.mini-stars .mini-star-wrap {
+  position: relative;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  line-height: 0;
+}
+.mini-stars .mini-star-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--favorite);
+  display: none;
+}
+.mini-stars .mini-star-wrap.full .mini-star-fill { display: block; }
+.mini-stars .mini-star-wrap.half .mini-star-fill {
+  display: block;
+  clip-path: inset(0 50% 0 0);
+}
 
 .btn-favorite {
   background: #e8f5e0;
@@ -2077,9 +2138,6 @@ nav { padding: 12px 16px; }
           <div class="modal-title" id="modal-title">—</div>
           <div class="modal-subtitle-row" id="modal-subtitle-row"></div>
         </div>
-        <button class="favorite-heart" id="modal-favorite-heart" onclick="toggleModalFavorite()" style="display:none">
-          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-        </button>
       </div>
       <div id="modal-body"></div>
       <div class="modal-footer" id="modal-footer" style="display:none">
@@ -4476,11 +4534,26 @@ async function extractPdfIngredients(path) {
 // STAR RATING
 // ============================================================
 
+var STAR_PATH = 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z';
+
 function renderStarRating(recipeId) {
   const rating = ratingsCache[recipeId] || {};
-  const stars = rating.stars || 0;
-  const starSvg = (i) => `<svg viewBox="0 0 24 24" class="star ${i <= stars ? 'filled' : ''}" onclick="event.stopPropagation(); setStarRating('${recipeId}', ${i})"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`;
-  return `<div class="star-rating">${[1,2,3,4,5].map(i => starSvg(i)).join('')}</div>`;
+  const stars = Number(rating.stars) || 0;
+  const escId = String(recipeId).replace(/'/g, "\\'");
+  const starWrap = (i) => {
+    let cls = 'star-wrap';
+    if (i <= stars) cls += ' full';
+    else if (i - 0.5 <= stars) cls += ' half';
+    return (
+      `<span class="${cls}" data-idx="${i}">` +
+        `<svg viewBox="0 0 24 24" class="star"><path d="${STAR_PATH}"/></svg>` +
+        `<svg viewBox="0 0 24 24" class="star-fill"><path d="${STAR_PATH}"/></svg>` +
+        `<span class="star-hit left" onclick="event.stopPropagation(); setStarRating('${escId}', ${i - 0.5})"></span>` +
+        `<span class="star-hit right" onclick="event.stopPropagation(); setStarRating('${escId}', ${i})"></span>` +
+      `</span>`
+    );
+  };
+  return `<div class="star-rating">${[1,2,3,4,5].map(starWrap).join('')}</div>`;
 }
 
 // Setup the modal header (image + title + subtitle + heart + footer buttons)
@@ -4511,15 +4584,13 @@ function setupRecipeModal(recipeId, name, opts) {
   else mealTypeLabel = 'Family Meal';
 
   const subtitleRow = document.getElementById('modal-subtitle-row');
+  const heartActive = rating.is_favorite ? ' active' : '';
   subtitleRow.innerHTML =
     '<span class="modal-meal-type">' + mealTypeLabel + '</span>' +
-    renderStarRating(recipeId);
-
-  // Favorite heart
-  const heart = document.getElementById('modal-favorite-heart');
-  heart.style.display = '';
-  if (rating.is_favorite) heart.classList.add('active');
-  else heart.classList.remove('active');
+    renderStarRating(recipeId) +
+    '<button class="favorite-heart' + heartActive + '" id="modal-favorite-heart" onclick="toggleModalFavorite()" aria-label="Favorite">' +
+      '<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>' +
+    '</button>';
 
   // Footer buttons
   const footer = document.getElementById('modal-footer');
@@ -4570,11 +4641,20 @@ async function toggleModalFavorite() {
 
 function renderMiniStars(recipeId) {
   const rating = ratingsCache[recipeId] || {};
-  const stars = rating.stars || 0;
+  const stars = Number(rating.stars) || 0;
   if (stars === 0) return '';
-  return `<span class="mini-stars">${[1,2,3,4,5].map(i =>
-    `<svg viewBox="0 0 24 24" class="mini-star ${i <= stars ? 'filled' : ''}"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`
-  ).join('')}</span>`;
+  const wrap = (i) => {
+    let cls = 'mini-star-wrap';
+    if (i <= stars) cls += ' full';
+    else if (i - 0.5 <= stars) cls += ' half';
+    return (
+      `<span class="${cls}">` +
+        `<svg viewBox="0 0 24 24" class="mini-star"><path d="${STAR_PATH}"/></svg>` +
+        `<svg viewBox="0 0 24 24" class="mini-star-fill"><path d="${STAR_PATH}"/></svg>` +
+      `</span>`
+    );
+  };
+  return `<span class="mini-stars">${[1,2,3,4,5].map(wrap).join('')}</span>`;
 }
 
 async function setStarRating(recipeId, stars) {
@@ -5259,8 +5339,6 @@ function closeModal(event) {
     if (oldEdit) oldEdit.style.display = 'none';
     document.getElementById('modal-header-img').innerHTML = '';
     document.getElementById('modal-subtitle-row').innerHTML = '';
-    document.getElementById('modal-favorite-heart').style.display = 'none';
-    document.getElementById('modal-favorite-heart').classList.remove('active');
     document.getElementById('modal-footer').style.display = 'none';
     currentModalRecipeId = null;
     if (history.state && history.state.modal) {
@@ -5411,7 +5489,6 @@ function renderRecipeEditor(data) {
   // Hide all the recipe-view elements (header image, subtitle, heart, footer)
   document.getElementById('modal-header-img').innerHTML = '';
   document.getElementById('modal-subtitle-row').innerHTML = '';
-  document.getElementById('modal-favorite-heart').style.display = 'none';
   document.getElementById('modal-footer').style.display = 'none';
   const oldEdit = document.getElementById('modal-edit-btn');
   if (oldEdit) oldEdit.style.display = 'none';
