@@ -1333,9 +1333,28 @@ flex: 1;
   width: 50%;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  z-index: 1;
 }
 .star-rating .star-hit.left { left: 0; }
 .star-rating .star-hit.right { right: 0; }
+
+/* Mouse hover preview: overrides saved fill while the cursor is over the rating */
+@media (hover: hover) and (pointer: fine) {
+  .star-rating .star-wrap { transition: transform 0.08s ease; }
+  .star-rating:hover .star-wrap .star-fill { display: none; clip-path: none; }
+  .star-rating:hover .star-wrap.preview-full .star-fill {
+    display: block;
+    clip-path: none;
+  }
+  .star-rating:hover .star-wrap.preview-half .star-fill {
+    display: block;
+    clip-path: inset(0 50% 0 0);
+  }
+  .star-rating:hover .star-wrap.preview-full,
+  .star-rating:hover .star-wrap.preview-half {
+    transform: scale(1.08);
+  }
+}
 
 /* Mini stars (on recipe cards) also support halves */
 .mini-stars .mini-star-wrap {
@@ -4548,12 +4567,30 @@ function renderStarRating(recipeId) {
       `<span class="${cls}" data-idx="${i}">` +
         `<svg viewBox="0 0 24 24" class="star"><path d="${STAR_PATH}"/></svg>` +
         `<svg viewBox="0 0 24 24" class="star-fill"><path d="${STAR_PATH}"/></svg>` +
-        `<span class="star-hit left" onclick="event.stopPropagation(); setStarRating('${escId}', ${i - 0.5})"></span>` +
-        `<span class="star-hit right" onclick="event.stopPropagation(); setStarRating('${escId}', ${i})"></span>` +
+        `<span class="star-hit left" data-val="${i - 0.5}" onclick="event.stopPropagation(); setStarRating('${escId}', ${i - 0.5})" onmouseenter="previewStarHover(this)"></span>` +
+        `<span class="star-hit right" data-val="${i}" onclick="event.stopPropagation(); setStarRating('${escId}', ${i})" onmouseenter="previewStarHover(this)"></span>` +
       `</span>`
     );
   };
-  return `<div class="star-rating">${[1,2,3,4,5].map(starWrap).join('')}</div>`;
+  return `<div class="star-rating" id="rating-${recipeId}" onmouseleave="clearStarHoverPreview(this)">${[1,2,3,4,5].map(starWrap).join('')}</div>`;
+}
+
+function previewStarHover(hit) {
+  var rating = hit.closest('.star-rating');
+  if (!rating) return;
+  var val = parseFloat(hit.dataset.val);
+  rating.querySelectorAll('.star-wrap').forEach(function(w) {
+    var idx = parseInt(w.dataset.idx, 10);
+    w.classList.remove('preview-full', 'preview-half');
+    if (idx <= val) w.classList.add('preview-full');
+    else if (idx - 0.5 <= val) w.classList.add('preview-half');
+  });
+}
+
+function clearStarHoverPreview(rating) {
+  rating.querySelectorAll('.star-wrap').forEach(function(w) {
+    w.classList.remove('preview-full', 'preview-half');
+  });
 }
 
 // Setup the modal header (image + title + subtitle + heart + footer buttons)
@@ -4657,10 +4694,25 @@ function renderMiniStars(recipeId) {
   return `<span class="mini-stars">${[1,2,3,4,5].map(wrap).join('')}</span>`;
 }
 
-async function setStarRating(recipeId, stars) {
+function setStarRating(recipeId, stars) {
   const existing = ratingsCache[recipeId] || {};
-  await saveRating(recipeId, stars, existing.is_favorite || false, existing.is_deleted || false);
+  const prev = Number(existing.stars) || 0;
+  // Tap the same value to clear it
+  const next = (stars === prev) ? 0 : stars;
+  // Optimistic cache update so the re-render sees the new value immediately
+  ratingsCache[recipeId] = Object.assign({}, existing, {
+    recipe_id: recipeId,
+    stars: next,
+    is_favorite: existing.is_favorite || false,
+    is_deleted: existing.is_deleted || false
+  });
+  // Re-render now (modal stars + any card mini-stars)
   refreshRatingUI(recipeId);
+  renderMeals();
+  // Persist in background
+  saveRating(recipeId, next, existing.is_favorite || false, existing.is_deleted || false).catch(function(e) {
+    console.warn('Save rating failed:', e);
+  });
 }
 
 async function toggleFavorite(recipeId) {
