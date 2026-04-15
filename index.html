@@ -1665,6 +1665,189 @@ nav { padding: 12px 16px; }
   margin-left: auto;
 }
 
+/* ============================================================
+   STEP TIMERS
+   ============================================================ */
+
+/* View mode timer pill */
+.step-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  margin-top: 8px;
+  margin-right: 6px;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+.step-timer:hover { border-color: var(--accent); }
+.step-timer:active { transform: scale(0.96); }
+.step-timer .st-icon { font-size: 14px; line-height: 1; }
+.step-timer[data-state="running"] {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface2));
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.step-timer[data-state="paused"] {
+  background: var(--surface2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.step-timer[data-state="done"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  animation: timerPulse 1.2s ease-in-out infinite;
+}
+@keyframes timerPulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 40%, transparent); }
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
+
+.modal-step .step-timers-list {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+/* Editor mode timer chip */
+.step-timer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 4px 4px 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  margin: 4px 6px 4px 0;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.step-timer-chip .chip-handle {
+  cursor: grab;
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+}
+.step-timer-chip.dragging {
+  opacity: 0.85;
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  transform: translate(-50%, -50%);
+  margin: 0;
+}
+.step-timer-chip .chip-time {
+  width: 56px;
+  border: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 0;
+  border-radius: 4px;
+}
+.step-timer-chip .chip-time:focus {
+  outline: 1px solid var(--accent);
+  background: var(--surface);
+}
+.step-timer-chip .chip-remove {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.step-timer-chip .chip-remove:hover { color: var(--danger); }
+
+/* Drop zones */
+.step-timers-zone {
+  min-height: 28px;
+  border: 1px dashed transparent;
+  border-radius: 8px;
+  padding: 4px 8px;
+  margin: 0 0 12px 32px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+.step-timers-zone.empty::before {
+  content: "Drag a timer here";
+  color: var(--muted);
+  font-size: 12px;
+  font-style: italic;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.step-timers-zone.drop-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.step-timers-zone.drop-active.empty::before { opacity: 0.7; }
+
+.step-timer-tray {
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: 42px;
+  transition: all 0.15s ease;
+}
+.step-timer-tray.drop-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface2));
+}
+.step-timer-tray-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-right: 8px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.editor-step-wrap {
+  margin-bottom: 4px;
+}
+
+/* Inline "+ Add Timer" button in the tray */
+.tray-add-btn {
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+.tray-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
 .editor-save {
   background: var(--accent);
   color: white;
@@ -4695,11 +4878,258 @@ function buildIngredientsHtml(ingredients) {
   '</div>';
 }
 
+// ============================================================
+// STEP TIMERS - parsing, auto-detect, runtime
+// ============================================================
+
+var TIMER_MARKER_RE = /\s*\[\[t:(\d+)\]\]/g;
+
+function parseStepTimers(stepText) {
+  var timers = [];
+  var text = String(stepText || '').replace(TIMER_MARKER_RE, function(_, s) {
+    var n = parseInt(s, 10);
+    if (n > 0) timers.push({ seconds: n });
+    return '';
+  }).trim();
+  return { text: text, timers: timers };
+}
+
+function serializeStepTimers(text, timers) {
+  var clean = String(text || '').replace(TIMER_MARKER_RE, '').trim();
+  if (!timers || !timers.length) return clean;
+  return clean + timers.map(function(t) { return ' [[t:' + t.seconds + ']]'; }).join('');
+}
+
+// Detect all time mentions in step text (ranges use the upper bound)
+function autoDetectTimers(text) {
+  if (!text) return [];
+  var results = [];
+  var rangeRe = /\b(\d+)\s*(?:-|to|–|—)\s*(\d+)\s*(minutes?|mins?|seconds?|secs?|hours?|hrs?)\b/gi;
+  var singleRe = /\b(\d+)\s*(minutes?|mins?|seconds?|secs?|hours?|hrs?)\b/gi;
+  var consumed = [];
+  var m;
+  while ((m = rangeRe.exec(text)) !== null) {
+    var secs = timerToSeconds(parseInt(m[2], 10), m[3]);
+    if (secs > 0) results.push({ seconds: secs, index: m.index, len: m[0].length });
+    consumed.push([m.index, m.index + m[0].length]);
+  }
+  while ((m = singleRe.exec(text)) !== null) {
+    var s = m.index, e = m.index + m[0].length;
+    var inside = consumed.some(function(c) { return s >= c[0] && e <= c[1]; });
+    if (inside) continue;
+    var secsSingle = timerToSeconds(parseInt(m[1], 10), m[2]);
+    if (secsSingle > 0) results.push({ seconds: secsSingle, index: s, len: m[0].length });
+  }
+  results.sort(function(a, b) { return a.index - b.index; });
+  return results.map(function(r) { return { seconds: r.seconds }; });
+}
+
+function timerToSeconds(n, unit) {
+  if (!n || n <= 0) return 0;
+  unit = String(unit).toLowerCase();
+  if (unit.indexOf('hour') === 0 || unit.indexOf('hr') === 0) return n * 3600;
+  if (unit.indexOf('sec') === 0) return n;
+  return n * 60;
+}
+
+function formatTimerClock(sec) {
+  sec = Math.max(0, Math.round(sec));
+  var h = Math.floor(sec / 3600);
+  var m = Math.floor((sec % 3600) / 60);
+  var s = sec % 60;
+  var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+  if (h > 0) return h + ':' + pad(m) + ':' + pad(s);
+  return pad(m) + ':' + pad(s);
+}
+
+// Accept "MM:SS", "M:SS", "H:MM:SS", or plain "N" (minutes) / "Nm" / "Ns" / "Nh"
+function parseTimerClock(str) {
+  str = String(str || '').trim();
+  if (!str) return 0;
+  if (/^\d+$/.test(str)) return parseInt(str, 10) * 60;
+  var suffix = str.match(/^(\d+(?:\.\d+)?)\s*(h|hr|hour|m|min|minute|s|sec|second)s?$/i);
+  if (suffix) {
+    var n = parseFloat(suffix[1]);
+    var u = suffix[2].toLowerCase();
+    if (u[0] === 'h') return Math.round(n * 3600);
+    if (u[0] === 's') return Math.round(n);
+    return Math.round(n * 60);
+  }
+  var parts = str.split(':').map(function(p) { return parseInt(p, 10) || 0; });
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return 0;
+}
+
+var activeTimers = {}; // id -> { endAt, remaining, state, element }
+var timerTickHandle = null;
+var timerAudioCtx = null;
+var timerIdCounter = 0;
+var notificationAsked = false;
+
+function nextTimerId() {
+  timerIdCounter += 1;
+  return 'stm-' + Date.now().toString(36) + '-' + timerIdCounter;
+}
+
+function ensureTimerTick() {
+  if (timerTickHandle) return;
+  timerTickHandle = setInterval(function() {
+    Object.keys(activeTimers).forEach(function(id) {
+      var t = activeTimers[id];
+      if (!t) return;
+      var attached = t.element && document.body.contains(t.element);
+      if (t.state === 'running') {
+        var remaining = Math.max(0, Math.round((t.endAt - Date.now()) / 1000));
+        t.remaining = remaining;
+        if (attached) updateTimerPillDisplay(t.element, 'running', remaining);
+        if (remaining <= 0) {
+          t.state = 'done';
+          if (attached) updateTimerPillDisplay(t.element, 'done', 0);
+          playDoneSound();
+          showDoneNotification(t.element, t.label);
+        }
+      } else if (t.state === 'done' && !attached) {
+        // Completed & its modal is gone — drop it
+        delete activeTimers[id];
+      } else if (!attached && t.state !== 'running') {
+        // Idle/paused entry whose UI is gone — drop it
+        delete activeTimers[id];
+      }
+    });
+    if (Object.keys(activeTimers).length === 0) {
+      clearInterval(timerTickHandle);
+      timerTickHandle = null;
+    }
+  }, 250);
+}
+
+function updateTimerPillDisplay(el, state, remaining) {
+  if (!el) return;
+  el.dataset.state = state;
+  var iconEl = el.querySelector('.st-icon');
+  var textEl = el.querySelector('.st-text');
+  if (!iconEl || !textEl) return;
+  if (state === 'running') {
+    iconEl.textContent = '⏸';
+    textEl.textContent = formatTimerClock(remaining);
+  } else if (state === 'paused') {
+    iconEl.textContent = '▶';
+    textEl.textContent = formatTimerClock(remaining);
+  } else if (state === 'done') {
+    iconEl.textContent = '✓';
+    textEl.textContent = 'Done!';
+  } else {
+    iconEl.textContent = '▶';
+    textEl.textContent = formatTimerClock(parseInt(el.dataset.seconds, 10) || 0);
+  }
+}
+
+function toggleStepTimer(el) {
+  if (!el) return;
+  var id = el.dataset.timerId;
+  if (!id) {
+    id = nextTimerId();
+    el.dataset.timerId = id;
+  }
+  var seconds = parseInt(el.dataset.seconds, 10) || 0;
+  if (seconds <= 0) return;
+  var existing = activeTimers[id];
+
+  if (!notificationAsked && 'Notification' in window && Notification.permission === 'default') {
+    notificationAsked = true;
+    try { Notification.requestPermission(); } catch(e) {}
+  }
+
+  // Unlock audio context on first user gesture
+  try {
+    if (!timerAudioCtx) timerAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (timerAudioCtx.state === 'suspended') timerAudioCtx.resume();
+  } catch(e) {}
+
+  if (!existing || existing.state === 'idle') {
+    activeTimers[id] = {
+      endAt: Date.now() + seconds * 1000,
+      remaining: seconds,
+      state: 'running',
+      element: el,
+      label: el.dataset.stepLabel || 'Timer'
+    };
+    updateTimerPillDisplay(el, 'running', seconds);
+    ensureTimerTick();
+  } else if (existing.state === 'running') {
+    existing.state = 'paused';
+    existing.remaining = Math.max(0, Math.round((existing.endAt - Date.now()) / 1000));
+    updateTimerPillDisplay(el, 'paused', existing.remaining);
+  } else if (existing.state === 'paused') {
+    existing.endAt = Date.now() + existing.remaining * 1000;
+    existing.state = 'running';
+    updateTimerPillDisplay(el, 'running', existing.remaining);
+    ensureTimerTick();
+  } else if (existing.state === 'done') {
+    // Dismiss -> reset
+    existing.state = 'idle';
+    existing.remaining = seconds;
+    updateTimerPillDisplay(el, 'idle', seconds);
+  }
+}
+
+function playDoneSound() {
+  try {
+    if (!timerAudioCtx) timerAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    var ctx = timerAudioCtx;
+    if (ctx.state === 'suspended') ctx.resume();
+    var beep = function(freq, start, dur) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      var t0 = ctx.currentTime + start;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.35, t0 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.02);
+    };
+    beep(880, 0, 0.22);
+    beep(1175, 0.28, 0.22);
+    beep(880, 0.56, 0.32);
+  } catch(e) { console.warn('Timer sound failed:', e); }
+}
+
+function showDoneNotification(el, fallbackLabel) {
+  var label = (el && el.dataset && el.dataset.stepLabel) ? el.dataset.stepLabel : (fallbackLabel || 'Timer');
+  try {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      var n = new Notification('⏱ ' + label + ' — done!', {
+        body: 'Your recipe timer has finished.',
+        tag: (el && el.dataset) ? el.dataset.timerId : undefined,
+        silent: false
+      });
+      setTimeout(function() { try { n.close(); } catch(e) {} }, 10000);
+    }
+  } catch(e) {}
+}
+
 function buildStepsHtml(steps) {
   return '<div class="modal-section">' +
     '<div class="modal-section-label">Instructions</div>' +
-    steps.map(function(step, i) {
-      return '<div class="modal-step"><span class="step-num">' + (i + 1) + '</span><span>' + step + '</span></div>';
+    steps.map(function(rawStep, i) {
+      var parsed = parseStepTimers(rawStep);
+      var timers = parsed.timers.length ? parsed.timers : autoDetectTimers(parsed.text);
+      var timersHtml = '';
+      if (timers.length) {
+        timersHtml = '<div class="step-timers-list">' + timers.map(function(t) {
+          var label = 'Step ' + (i + 1);
+          return '<button type="button" class="step-timer" data-seconds="' + t.seconds + '" data-state="idle" data-step-label="' + label.replace(/"/g, '&quot;') + '" onclick="toggleStepTimer(this)">' +
+            '<span class="st-icon">▶</span><span class="st-text">' + formatTimerClock(t.seconds) + '</span>' +
+          '</button>';
+        }).join('') + '</div>';
+      }
+      var escText = parsed.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return '<div class="modal-step"><span class="step-num">' + (i + 1) + '</span><span>' + escText + timersHtml + '</span></div>';
     }).join('') +
   '</div>';
 }
@@ -4963,11 +5393,7 @@ function renderRecipeEditor(data) {
   }).join('');
 
   var stepsHtml = data.steps.map(function(step, i) {
-    return '<div class="editor-row">' +
-      '<span style="color:var(--accent);font-weight:700;min-width:24px">' + (i + 1) + '</span>' +
-      '<textarea rows="2" placeholder="Step ' + (i + 1) + '..." data-step="' + i + '">' + (step || '').replace(/</g, '&lt;') + '</textarea>' +
-      '<button class="editor-remove-btn" onclick="removeEditorStep(' + i + ')" type="button">&times;</button>' +
-      '</div>';
+    return buildEditorStepHtml(step, i);
   }).join('');
 
   var currentImage = editorRecipeId ? getRecipeImage(editorRecipeId) : null;
@@ -5020,6 +5446,10 @@ function renderRecipeEditor(data) {
       '<button class="editor-add-btn" onclick="addEditorIngredient()" type="button">+ Add Ingredient</button>' +
     '</div>' +
     '<div class="editor-field"><label>Steps</label>' +
+      '<div class="step-timer-tray" id="editor-timer-tray" data-timer-slot="tray">' +
+        '<span class="step-timer-tray-label">Unassigned timers — drag onto a step</span>' +
+        '<button class="tray-add-btn" onclick="addEditorTimer()" type="button">+ Add Timer</button>' +
+      '</div>' +
       '<div id="editor-steps">' + stepsHtml + '</div>' +
       '<button class="editor-add-btn" onclick="addEditorStep()" type="button">+ Add Step</button>' +
     '</div>' +
@@ -5051,13 +5481,173 @@ function getEditorIngredients() {
 function getEditorSteps() {
   var steps = [];
   var container = document.getElementById('editor-steps');
-  var rows = container.querySelectorAll('.editor-row');
-  rows.forEach(function(row) {
-    var textarea = row.querySelector('textarea');
-    if (textarea) steps.push(textarea.value.trim());
+  var wraps = container.querySelectorAll('.editor-step-wrap');
+  wraps.forEach(function(wrap) {
+    var textarea = wrap.querySelector('textarea');
+    var text = textarea ? textarea.value.trim() : '';
+    var timers = [];
+    wrap.querySelectorAll('.step-timers-zone .step-timer-chip').forEach(function(chip) {
+      var secs = parseTimerClock(chip.querySelector('.chip-time').value);
+      if (secs > 0) timers.push({ seconds: secs });
+    });
+    steps.push(serializeStepTimers(text, timers));
   });
   return steps;
 }
+
+function getEditorUnassignedTimers() {
+  var tray = document.getElementById('editor-timer-tray');
+  if (!tray) return [];
+  var out = [];
+  tray.querySelectorAll('.step-timer-chip').forEach(function(chip) {
+    var secs = parseTimerClock(chip.querySelector('.chip-time').value);
+    if (secs > 0) out.push({ seconds: secs });
+  });
+  return out;
+}
+
+function buildEditorStepHtml(rawStep, i) {
+  var parsed = parseStepTimers(rawStep);
+  // If no explicit markers, auto-promote detected times to chips so they
+  // become explicit on save (editable going forward).
+  var timers = parsed.timers.length ? parsed.timers : autoDetectTimers(parsed.text);
+  var chipsHtml = timers.map(function(t) { return buildTimerChipHtml(t.seconds); }).join('');
+  var safeText = (parsed.text || '').replace(/</g, '&lt;');
+  return '<div class="editor-step-wrap" data-step-wrap="' + i + '">' +
+    '<div class="editor-row">' +
+      '<span style="color:var(--accent);font-weight:700;min-width:24px">' + (i + 1) + '</span>' +
+      '<textarea rows="2" placeholder="Step ' + (i + 1) + '..." data-step="' + i + '">' + safeText + '</textarea>' +
+      '<button class="editor-remove-btn" onclick="removeEditorStep(' + i + ')" type="button">&times;</button>' +
+    '</div>' +
+    '<div class="step-timers-zone' + (chipsHtml ? '' : ' empty') + '" data-timer-slot="step" data-step-index="' + i + '">' + chipsHtml + '</div>' +
+  '</div>';
+}
+
+function buildTimerChipHtml(seconds) {
+  return '<span class="step-timer-chip" draggable="false">' +
+    '<span class="chip-handle" data-drag-handle="1">⋮⋮</span>' +
+    '<span class="st-icon" style="font-size:12px">⏱</span>' +
+    '<input class="chip-time" type="text" inputmode="numeric" value="' + formatTimerClock(seconds) + '" onchange="normalizeTimerChipInput(this)" onfocus="this.select()">' +
+    '<button type="button" class="chip-remove" onclick="removeTimerChip(this)">&times;</button>' +
+  '</span>';
+}
+
+function normalizeTimerChipInput(input) {
+  var secs = parseTimerClock(input.value);
+  input.value = formatTimerClock(secs);
+}
+
+function removeTimerChip(btn) {
+  var chip = btn.closest('.step-timer-chip');
+  if (!chip) return;
+  var zone = chip.closest('.step-timers-zone');
+  chip.remove();
+  if (zone && !zone.querySelector('.step-timer-chip')) zone.classList.add('empty');
+}
+
+function addEditorTimer() {
+  var tray = document.getElementById('editor-timer-tray');
+  if (!tray) return;
+  var addBtn = tray.querySelector('.tray-add-btn');
+  var wrapper = document.createElement('span');
+  wrapper.innerHTML = buildTimerChipHtml(300); // default 5 min
+  var chip = wrapper.firstChild;
+  if (addBtn) {
+    tray.insertBefore(chip, addBtn);
+  } else {
+    tray.appendChild(chip);
+  }
+}
+
+// ---- Drag and drop for timer chips (pointer events, works on touch) ----
+
+var dragCtx = null;
+
+function onTimerChipPointerDown(e) {
+  var handle = e.target.closest('[data-drag-handle]');
+  if (!handle) return;
+  var chip = handle.closest('.step-timer-chip');
+  if (!chip) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  var rect = chip.getBoundingClientRect();
+  dragCtx = {
+    chip: chip,
+    pointerId: e.pointerId,
+    originParent: chip.parentNode,
+    originNext: chip.nextSibling,
+    offsetX: e.clientX - (rect.left + rect.width / 2),
+    offsetY: e.clientY - (rect.top + rect.height / 2),
+    lastTarget: null
+  };
+
+  chip.classList.add('dragging');
+  chip.style.left = (e.clientX - dragCtx.offsetX) + 'px';
+  chip.style.top = (e.clientY - dragCtx.offsetY) + 'px';
+
+  try { handle.setPointerCapture(e.pointerId); } catch(err) {}
+  handle.addEventListener('pointermove', onTimerChipPointerMove);
+  handle.addEventListener('pointerup', onTimerChipPointerUp);
+  handle.addEventListener('pointercancel', onTimerChipPointerUp);
+}
+
+function onTimerChipPointerMove(e) {
+  if (!dragCtx || e.pointerId !== dragCtx.pointerId) return;
+  e.preventDefault();
+  var chip = dragCtx.chip;
+  chip.style.left = (e.clientX - dragCtx.offsetX) + 'px';
+  chip.style.top = (e.clientY - dragCtx.offsetY) + 'px';
+
+  // Temporarily hide chip so elementFromPoint finds what's beneath
+  chip.style.visibility = 'hidden';
+  var beneath = document.elementFromPoint(e.clientX, e.clientY);
+  chip.style.visibility = '';
+  var target = beneath ? beneath.closest('[data-timer-slot]') : null;
+
+  if (dragCtx.lastTarget && dragCtx.lastTarget !== target) {
+    dragCtx.lastTarget.classList.remove('drop-active');
+  }
+  if (target) target.classList.add('drop-active');
+  dragCtx.lastTarget = target;
+}
+
+function onTimerChipPointerUp(e) {
+  if (!dragCtx || e.pointerId !== dragCtx.pointerId) return;
+  var chip = dragCtx.chip;
+  var target = dragCtx.lastTarget;
+
+  chip.classList.remove('dragging');
+  chip.style.left = '';
+  chip.style.top = '';
+
+  if (target) {
+    target.classList.remove('drop-active');
+    var addBtn = target.querySelector('.tray-add-btn');
+    if (addBtn) {
+      target.insertBefore(chip, addBtn);
+    } else {
+      target.appendChild(chip);
+    }
+    // Refresh empty state on step zones
+    document.querySelectorAll('.step-timers-zone').forEach(function(z) {
+      if (z.querySelector('.step-timer-chip')) z.classList.remove('empty');
+      else z.classList.add('empty');
+    });
+  }
+  // If no valid drop target, chip stays where it was (origin is preserved in DOM)
+
+  var handle = e.target;
+  try { handle.releasePointerCapture(e.pointerId); } catch(err) {}
+  handle.removeEventListener('pointermove', onTimerChipPointerMove);
+  handle.removeEventListener('pointerup', onTimerChipPointerUp);
+  handle.removeEventListener('pointercancel', onTimerChipPointerUp);
+  dragCtx = null;
+}
+
+// Delegate pointerdown once, in capture phase
+document.addEventListener('pointerdown', onTimerChipPointerDown, true);
 
 function addEditorIngredient() {
   var ings = getEditorIngredients();
@@ -5099,13 +5689,7 @@ function removeEditorStep(idx) {
 }
 
 function updateEditorSteps(steps) {
-  var html = steps.map(function(step, i) {
-    return '<div class="editor-row">' +
-      '<span style="color:var(--accent);font-weight:700;min-width:24px">' + (i + 1) + '</span>' +
-      '<textarea rows="2" placeholder="Step ' + (i + 1) + '..." data-step="' + i + '">' + (step || '').replace(/</g, '&lt;') + '</textarea>' +
-      '<button class="editor-remove-btn" onclick="removeEditorStep(' + i + ')" type="button">&times;</button>' +
-      '</div>';
-  }).join('');
+  var html = steps.map(function(step, i) { return buildEditorStepHtml(step, i); }).join('');
   document.getElementById('editor-steps').innerHTML = html;
 }
 
@@ -5129,6 +5713,13 @@ async function saveRecipe() {
     return;
   }
 
+  // Warn about unassigned timers (they won't be saved)
+  var unassigned = getEditorUnassignedTimers();
+  if (unassigned.length) {
+    var ok = confirm(unassigned.length + ' timer(s) haven\u2019t been dragged onto a step and will be discarded. Save anyway?');
+    if (!ok) return;
+  }
+
   // Immediate visual feedback on the Save button
   var saveBtn = document.querySelector('.editor-save');
   var originalLabel = saveBtn ? saveBtn.textContent : 'Save';
@@ -5142,7 +5733,11 @@ async function saveRecipe() {
   var id = editorRecipeId || ('custom-' + slugify(data.name));
 
   var ingredients = data.ingredients.filter(function(i) { return i.item.trim() !== ''; });
-  var steps = data.steps.filter(function(s) { return s.trim() !== ''; });
+  var steps = data.steps.filter(function(s) {
+    // Keep a step if it has text OR at least one timer marker
+    var p = parseStepTimers(s);
+    return p.text !== '' || p.timers.length > 0;
+  });
 
   var row = {
     id: id,
